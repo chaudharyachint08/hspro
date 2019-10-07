@@ -5,12 +5,15 @@ learning how to enable various developers options, getting stable executions ann
 
 1. *Adding "Actual cost" in plan returned after execution, (presently "Estimated Cost" and "Actual time" is returned post execution)*
 Cost-Time mapping needs this, in absence of True cardinalities (more precisely, double execution & actual cardinality injection is not needed then)
+@Presently done using FPC & Selectivity Injection
+
 
 2. *"Execution Time" & "Execution Cost" limits to be added for time resource constrained execution*
 Have to kill a Query when reached its limit, i.e., next Iso-cost surface
 
 3. *Cardinality injection into "plan structure", (into JSON/XML format)*
 Explicitly changing values at various operators, into "Plan Rows"
+@ Explicitly injecting for each predicate after EXPLAIN ANALYZE
 
 4. *Foreign Plan Costing, need to get estimated cost of a plan at any cardinality space with optimizer assumptions of cost model (Needs re-computation of cost)*
 IF   that is done in lattice/heuristics, which means setting of all other lattice operators to be INFINITY
@@ -20,6 +23,7 @@ ELSE have to figure out why & where these is a second costing mechanism & how ca
 
 5. *Plan forcing for actual execution (not needed by RQP approaches, but can be needed someday)*
 Pl/Python provides for now plpy.prepare() plpy.execute() statements, can we do it so easy?? (observe plpy.prepare() return type, if same as JSONs, then done)
+@ Reliance on Legacy code by Doctoral Students
 
 #### Optional Python level changes outside PostgreSQL environment ####
 
@@ -30,9 +34,9 @@ Changing of cost vector values on the fly, Srinivas told that there is explicit 
 Changing the corresponding constants in order to get nearly desired cardinalities at each of base_predicate
 
 
-
 Sice, PostgreSQL does Optimal Plan Construction using Bottom-Up Dynamic Programming,
 cost modelling should be inside lattice for choosing best plans, 
 Also, what if due to more number of relations PostgreSQL switches to some heuristics
 
-
+Attribute Value Independence, assumed in Plan Bouquet
+Clearning buffer without reastart
