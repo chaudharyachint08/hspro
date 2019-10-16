@@ -1,0 +1,1447 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 14">
+<meta name=Originator content="Microsoft Word 14">
+<link rel=File-List href="ConstructMode-GraphHistogram_files/filelist.xml">
+<link rel=Edit-Time-Data href="ConstructMode-GraphHistogram_files/editdata.mso">
+<title>CODD Usage Guide</title>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="place"/>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="country-region"/>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="City"/>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>dsladmin</o:Author>
+  <o:LastAuthor>dsladmin</o:LastAuthor>
+  <o:Revision>1034</o:Revision>
+  <o:TotalTime>110</o:TotalTime>
+  <o:Created>2012-05-12T22:31:00Z</o:Created>
+  <o:LastSaved>2012-07-13T04:44:00Z</o:LastSaved>
+  <o:Pages>8</o:Pages>
+  <o:Words>1502</o:Words>
+  <o:Characters>8564</o:Characters>
+  <o:Lines>71</o:Lines>
+  <o:Paragraphs>20</o:Paragraphs>
+  <o:CharactersWithSpaces>10046</o:CharactersWithSpaces>
+  <o:Version>12.00</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]-->
+<link rel=themeData href="ConstructMode-GraphHistogram_files/themedata.thmx">
+<link rel=colorSchemeMapping
+href="ConstructMode-GraphHistogram_files/colorschememapping.xml">
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>90</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:DrawingGridHorizontalSpacing>6 pt</w:DrawingGridHorizontalSpacing>
+  <w:DisplayHorizontalDrawingGridEvery>2</w:DisplayHorizontalDrawingGridEvery>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>X-NONE</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:DontVertAlignCellWithSp/>
+   <w:DontBreakConstrainedForcedTables/>
+   <w:DontVertAlignInTxbx/>
+   <w:Word11KerningPairs/>
+   <w:CachedColBalance/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+  <m:mathPr>
+   <m:mathFont m:val="Cambria Math"/>
+   <m:brkBin m:val="before"/>
+   <m:brkBinSub m:val="&#45;-"/>
+   <m:smallFrac m:val="off"/>
+   <m:dispDef/>
+   <m:lMargin m:val="0"/>
+   <m:rMargin m:val="0"/>
+   <m:defJc m:val="centerGroup"/>
+   <m:wrapIndent m:val="1440"/>
+   <m:intLim m:val="subSup"/>
+   <m:naryLim m:val="undOvr"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="true"
+  DefSemiHidden="true" DefQFormat="false" DefPriority="99"
+  LatentStyleCount="267">
+  <w:LsdException Locked="false" Priority="0" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Normal"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="heading 1"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 2"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 3"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 4"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 5"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 6"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 7"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 8"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 9"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 1"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 2"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 3"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 4"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 5"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 6"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 7"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 8"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 9"/>
+  <w:LsdException Locked="false" Priority="35" QFormat="true" Name="caption"/>
+  <w:LsdException Locked="false" Priority="10" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Title"/>
+  <w:LsdException Locked="false" Priority="1" Name="Default Paragraph Font"/>
+  <w:LsdException Locked="false" Priority="11" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtitle"/>
+  <w:LsdException Locked="false" Priority="22" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Strong"/>
+  <w:LsdException Locked="false" Priority="20" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Emphasis"/>
+  <w:LsdException Locked="false" Priority="59" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Table Grid"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Placeholder Text"/>
+  <w:LsdException Locked="false" Priority="1" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="No Spacing"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 1"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 1"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Revision"/>
+  <w:LsdException Locked="false" Priority="34" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="List Paragraph"/>
+  <w:LsdException Locked="false" Priority="29" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Quote"/>
+  <w:LsdException Locked="false" Priority="30" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Quote"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 1"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 1"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 2"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 2"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 2"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 3"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 3"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 3"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 4"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 4"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 4"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 5"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 5"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 5"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 6"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 6"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 6"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="19" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Emphasis"/>
+  <w:LsdException Locked="false" Priority="21" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Emphasis"/>
+  <w:LsdException Locked="false" Priority="31" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Reference"/>
+  <w:LsdException Locked="false" Priority="32" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Reference"/>
+  <w:LsdException Locked="false" Priority="33" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Book Title"/>
+  <w:LsdException Locked="false" Priority="37" Name="Bibliography"/>
+  <w:LsdException Locked="false" Priority="39" QFormat="true" Name="TOC Heading"/>
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-520081665 -1073717157 41 0 66047 0;}
+@font-face
+	{font-family:"Arial Narrow";
+	panose-1:2 11 6 6 2 2 2 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:647 2048 0 0 159 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+p
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-margin-top-alt:auto;
+	margin-right:0cm;
+	mso-margin-bottom-alt:auto;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";}
+p.MsoAcetate, li.MsoAcetate, div.MsoAcetate
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-link:"Balloon Text Char";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-fareast-font-family:"Times New Roman";}
+span.BalloonTextChar
+	{mso-style-name:"Balloon Text Char";
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Balloon Text";
+	mso-ansi-font-size:8.0pt;
+	mso-bidi-font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-ascii-font-family:Tahoma;
+	mso-hansi-font-family:Tahoma;
+	mso-bidi-font-family:Tahoma;}
+p.style1, li.style1, div.style1
+	{mso-style-name:style1;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	margin-top:14.25pt;
+	margin-right:0cm;
+	mso-margin-bottom-alt:auto;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-size:10.0pt;
+	mso-ansi-font-size:10.0pt;
+	mso-bidi-font-size:10.0pt;}
+@page WordSection1
+	{size:595.45pt 841.7pt;
+	margin:36.0pt 36.0pt 36.0pt 36.0pt;
+	mso-header-margin:36.0pt;
+	mso-footer-margin:36.0pt;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:225920656;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-2045878420 -361965702 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l0:level1
+	{mso-level-tab-stop:57.6pt;
+	mso-level-number-position:left;
+	margin-left:57.6pt;
+	text-indent:-21.6pt;}
+@list l0:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1
+	{mso-list-id:326247036;
+	mso-list-template-ids:824862114;}
+@list l1:level1
+	{mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2
+	{mso-list-id:532697087;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1523452334 67698691 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	margin-left:72.0pt;
+	text-indent:-18.0pt;
+	font-family:"Courier New";}
+@list l2:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3
+	{mso-list-id:1274165274;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-591072290 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l3:level1
+	{mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4
+	{mso-list-id:1300844948;
+	mso-list-type:hybrid;
+	mso-list-template-ids:944285172 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l4:level1
+	{mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5
+	{mso-list-id:1417051342;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-470500682 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l5:level1
+	{mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman","serif";}
+</style>
+<![endif]-->
+<meta http-equiv=Content-Language content=en-us>
+<!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1026"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-IN link=blue vlink=blue style='tab-interval:36.0pt'>
+
+<div class=WordSection1>
+
+<p class=MsoNormal align=center style='text-align:center'><b style='mso-bidi-font-weight:
+normal'><i><span style='font-size:20.0pt;font-family:"Arial","sans-serif";
+color:#CC0066'>CODD Metadata Processor<o:p></o:p></span></i></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Arial","sans-serif";color:black;mso-bidi-font-style:
+italic'>&copy;Indian Institute of Science, <st1:place w:st="on"><st1:City w:st="on">Bangalore</st1:City>,
+ <st1:country-region w:st="on">India</st1:country-region></st1:place></span></b><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Arial","sans-serif";
+color:black'><o:p></o:p></span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p align=center style='margin-left:18.0pt;text-align:center;text-indent:-18.0pt'><b
+style='mso-bidi-font-weight:normal'><span lang=EN-US style='font-size:16.0pt;
+font-family:"Arial","sans-serif";color:red;mso-ansi-language:EN-US'>
+CONSTRUCT MODE - GRAPH HISTOGRAM</span></b></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+CODD provides a feature to modify the data distribution of a column through
+graphical interface, when the user wants to edit the histogram of a column in
+the <a href="ConstructMode.htm">Metadata Construct Mode</a>.
+Figure 11 shows the graphical interface of histogram. CODD uses <a
+href="http://www.jfree.org/jfreechart/">JFreeChart</a>
+for the graphical histogram. Features of <a
+href="http://www.jfree.org/jfreechart/">JFreeChart</a>
+like zoom in/out on the graph are inherently present in the graph
+histogram.<o:p></o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p align=center style='text-align:center'><span style='mso-no-proof:yes'><img
+width=626 height=458 id="_x0000_i1026" src=ConstructMode-GraphHistogram_files/GraphHistogram.jpg
+alt="ConstructMode Graph Histogram"></span></p>
+
+<p class=MsoNormal align=center style='margin-left:0in;text-align:center;
+line-height:150%'><b><span style='font-size:12.0pt;line-height:150%;font-family:
+"Arial","sans-serif"'>Figure 11 - Graph Histogram Window</span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><b style='mso-bidi-font-weight:
+normal'><span style='font-size:16.0pt;font-family:"Arial","sans-serif";
+color:blue'>Components of the Graph Histogram GUI</span></b><b style='mso-bidi-font-weight:normal'><u><span
+style='font-size:16.0pt;font-family:"Tahoma","sans-serif";color:blue'><o:p></o:p></span></u></b></p>
+
+<p class=MsoNormal style='text-align:justify'><span style='font-family:"Arial","sans-serif"'>&nbsp;<o:p></o:p></span></p>
+
+<ol start=1 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Vertical Slider:</span></strong><span
+     style='font-family:"Arial","sans-serif"'> The vertical slider on the left side of 
+	 the graph histogram window represents the percentage of tuple (0 -100). Upon selecting a bucket, 
+	 the slider value is set to the percentage of tuple present in the bucket. <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Vertical Slider Textbox:</span></strong><span
+     style='font-family:"Arial","sans-serif"'> The vertical slider textbox represents the percentage
+	 of tuple (0 - 100). Upon selecting a bucket, the textbox value is set to the percentage of tuple 
+	 present in the bucket. <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Data Distribution Graph:</span>
+	 </strong><span style='font-family:"Arial","sans-serif"'> The central part of the window is the 
+	 data distribution graph, which is constructed using <a href="http://www.jfree.org/jfreechart/">JFreeChart</a>. 
+	 The top label above the graph represents the histogram value (Frequency Count or Distinct Count) being shown. 
+	 At the bottom it shows the column name, for which the histogram is shown (Figure 11 graph represents the 
+	 data distribution of C_ACCTBAL of CUSTOMER relation). A bucket can be selected by clicking on the bucket. 
+	 The selection of bucket is shown by a GREEN color border around the bucket. 
+	 Selection of a bucket also changes the Vertical Slider, Horizontal Slider, Vertical Slider Textbox, 
+	 Horizontal Slider Textbox and Bucket Information label.<o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Zoom-in operation: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>Select the area of the histogram, 
+	 which you want to zoom in by dragging the mouse. Selecting a bucket a in the zoom-in mode, 
+	 brings the graph back to original representation. </span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Zoom-out operation:</span>
+	 </strong><span style='font-family:"Arial","sans-serif"'> Right click on the zoomed-in graph 
+	 and choose AutoRange -&gt; Both Axes.<o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Add/Delete Bucket at[Front/Back] Buttons: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>These
+buttons lets the user add / remove bucket at the start or end of the bucket.</span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Bucket Information label: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>The
+label present in between the <b>Add/Delete Bucket at[Front/Back]</b>
+buttons represent the bucket information. Upon selecting a bucket, this label
+changes and shows the bucket range and frequency / distinct count present in
+the bucket.<o:p></o:p></span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Horizontal BiSlider: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>The
+horizontal slider is a <a
+href="http://perso.limsi.fr/Individu/vernier/BiSlider/">BiSlider</a>,
+which helps in changing the bucket range. Upon selecting a bucket, the BiSlider sets the left and
+right knob at the bucket boundaries. </span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Horizontal BiSlider TextBox: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>The
+horizontal slider textbox helps in changing the bucket range. Upon selecting 
+a bucket, the two textboxes value is set to the bucket boundaries. <o:p></o:p></span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Distribute mode buttons: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'><b>Distribute Buckets</b>
+button is enabled if the excess / less percentage of tuples is not zero. Initially,
+the graph represents all the 100% of tuples. As the graph is changed the total
+percentage of tuple represented by the graph may go less or excess. This
+button lets the user distribute the excess / less percentage of tuples into
+a selected list of buckets. <b>Finish</b> button will be enabled only if there is no excess / less percentage of 
+tuples. In Figure 11, the graph is excess of 8.25% of tuples.<o:p></o:p></span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Merge mode buttons: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>Selecting
+<b style='mso-bidi-font-weight:normal'>Start Merging Buckets</b> button starts the merging
+of buckets. The user can select multiple adjacent buckets and click on <b
+style='mso-bidi-font-weight:normal'>Merge Buckets</b> button to merge the selected
+buckets. </span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Split a Bucket in Two Buckets Button: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>Clicking on this button lets 
+	 the user split the selected bucket into two.<o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Redo, Undo buttons: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>Graph
+Histogram supports to store the last 10 history of operations. Operations can
+be Undone / Redone in case if the user wants to revert back an operation with
+the help of <b>Undo, Redo</b> buttons. </span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'> Finish button: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'><b>Finish</b> button exits the
+graph and updates the histogram in the Construct mode with the graph values. If
+the button was clicked when the graph was representing the frequency count of
+buckets and distinct counts are present for the buckets, then it shows the
+distinct count graph, where the user can modify the distribution of distinct
+count on the buckets. Closing the graph doesn't affect the histogram in the
+Construct mode window.<o:p></o:p></span></li>
+<span lang=EN-IN style='mso-ansi-language:
+     EN-IN'><o:p></o:p></span></li>
+</ol>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><b style='mso-bidi-font-weight:
+normal'><span style='font-size:16.0pt;font-family:"Arial","sans-serif";
+color:blue'>Features of Graph Histogram</span></b><b style='mso-bidi-font-weight:normal'><u><span
+style='font-size:16.0pt;font-family:"Tahoma","sans-serif";color:blue'><o:p></o:p></span></u></b></p>
+
+<p class=MsoNormal style='text-align:justify'><span style='font-family:"Arial","sans-serif"'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+The graph histogram supports the following features:<o:p></o:p></span></p>
+
+<ol start=1 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Adjust the height of a histogram bucket:</span></strong><span
+     style='font-family:"Arial","sans-serif"'> 
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Upon selecting a bucket, the vertical
+slider value is set to the percentage of tuples present in the bucket. The user
+can move the knob to increase / decrease
+the percentage of tuples present in the bucket.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Each bucket has minimum (1% of
+total row / distinct counts) height beyond which the bucket can't be decreased. 
+If the column is of integer type and if there is a unique constraint, then the height 
+can't be increased beyond the max height possible (which is the number of unique integer 
+values in the bucket range).<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  And also for distinct count graph the bucket can't be increased 
+beyond the bucket's row count. The increase / decrease in the height is reflected in the 
+Excess / Less percentage of tuple of the histogram label. Alternatively,
+the user can also enter the tuple percentage using Vertical Slider textbox.<o:p></o:p></span></li>
+</ul>
+	    <o:p></o:p></span></li>
+
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Adjust the width of a histogram bucket:</span></strong><span
+     style='font-family:"Arial","sans-serif"'>
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  CODD Graph Histogram supports changing width of the bucket only for columns with numeric
+      data types (Integer, Double).<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Upon selecting a bucket, the horizontal bislider represents the bucket boundary. 
+	  The user can move the knobs to change the width of the bucket. Each bucket has a minimum 
+	  width (1 i.e the minimum bucket range (right boundary - left boundary) is 1), beyond which 
+	  it can't be decreased.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Alternatively, the user can change the bucket boundaries using the Horizontal Slider textboxes
+	  by directly entering a valid value for the bucket boundaries.<o:p></o:p></span></li>
+     </ul> <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Split a bucket into two:</span>
+	 </strong><span style='font-family:"Arial","sans-serif"'> 
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Upon selecting a bucket and clicking on the <b>Split a Bucket in Two Buckets</b> button, 
+	  the user is asked for the split column value (which should be in between the left and 
+	  right boundary of the bucket) and height split percentage for the bucket split.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  The bucket is split into two buckets based on the inputs.<o:p></o:p></span></li>
+     </ul> 
+	  <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Merge one or more nearer buckets into one
+bucket: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  If the user chooses the <b>Start Merging Buckets</b> button, the graph goes to merge 
+	  mode.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  The user can select multiple adjacent buckets and click on <b>Merge Buckets</b> button.
+      This merges the selected bucket into one bucket.<o:p></o:p></span></li>
+     </ul> 
+     <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Add or Remove bucket from the start / end of
+the histogram:</span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Clicking on the <b>Add/Delete Bucket at[Front/Back]</b> buttons asks the user for 
+	  the input (add / remove) and if it is add the user has to give the minimum / maximum 
+	  value of the new bucket.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	   Based on the input the end of the histogram is modified and <b>Excess / Less 
+       percentage of tuple of the histogram </b>updated accordingly.<o:p></o:p></span></li>
+     </ul> <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Distribute the excess / less percentage of
+tuples in to a selected list of buckets: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>
+	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  If the excess / shortage percentage of row / distinct count is not zero and the
+      user has clicked on the <b>Distribute Excess/Less Values</b> button, then the graph 
+      goes to Distribute mode.<o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	   This enables the <b>Selected</b>, <b>Not Selected</b>buttons. The user can select multiple 
+	   buckets by clicking on the buckets. A selected bucket can be unselected by clicking on the bucket
+again. And also clicking outside the graph, un-selects all the selected buckets. <o:p></o:p></span></li>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	   For excess percentage, the user has to select buckets whose total percentage of
+row / distinct count is more than excess percentage. After selecting the
+buckets, the user can click on the <b>Selected /</b> <b>Not Selected </b>buttons
+to distribute (weighted distribution) the excess / less percentage on the <b>selected / un selected</b> 
+buckets.After this operation, the <b>Excess / Less percentage of tuple of the histogram </b> 
+changes.<o:p></o:p></span></li>
+     </ul><o:p></o:p></span></li>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Undo and Redo the operations: </span>
+	 </strong><span style='font-family:"Arial","sans-serif"'>
+	 	 <ul style='margin-top:0in' type=circle>
+	   <li class=MsoNormal style='mso-list:l3 level2 lfo2;tab-stops:list 1.0in'><span
+      style='font-size:12.0pt;mso-bidi-font-size:12.0pt;font-family:"Arial","sans-serif"'>
+	  Clicking on <b>Undo</b> button undoes the previous operation. 
+	  <b>Redo</b> button is enabled only if there was an earlier undo operation; clicking on it 
+	  redoes the undone operation.<o:p></o:p></span></li>
+     </ul><o:p></o:p></span></li>
+<span lang=EN-IN style='mso-ansi-language:
+     EN-IN'><o:p></o:p></span></li>
+</ol>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+After each operation, the graph is refreshed and the new graph is shown to the user.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><span style='font-family:"Arial","sans-serif"'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><b style='mso-bidi-font-weight:
+normal'><span style='font-size:16.0pt;font-family:"Arial","sans-serif";
+color:blue'>Operating data modes of Graph Histogram</span></b><b style='mso-bidi-font-weight:normal'><u><span
+style='font-size:16.0pt;font-family:"Tahoma","sans-serif";color:blue'><o:p></o:p></span></u></b></p>
+
+<p class=MsoNormal style='text-align:justify'><span style='font-family:"Arial","sans-serif"'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+The graph histogram is used in two modes of operations as given below.<o:p></o:p></span></p>
+
+<ol start=1 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Frequency Mode:</span></strong><span
+     style='font-family:"Arial","sans-serif"'> The graph operates on the frequency values of the buckets. <o:p></o:p></span></li>
+	 
+	 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l1 level1 lfo6;tab-stops:list .5in'><strong><span
+     style='font-family:"Arial","sans-serif";color:#9900CC'>Distinct Count Mode:</span></strong><span
+     style='font-family:"Arial","sans-serif"'> The graph operates on the distinct count values of the buckets.
+Distinct Count Mode is carried out only after completing the Frequency Mode.
+The number of buckets and their positions are fixed (based on the changes in
+the Frequency Mode) in this mode i.e., the user will be able to adjust only the
+height of the histogram and distribute the excess / less percentage of tuples.
+Changing bucket width, split, merge, add / remove is not supported in this
+mode. <o:p></o:p></span></li>
+<span lang=EN-IN style='mso-ansi-language:
+     EN-IN'><o:p></o:p></span></li>
+</ol>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+The graph starts with the Frequency mode. Once the user is done with the changes on
+frequency histogram,&nbsp; he / she can click on the <b>Finish</b> button,
+which will take the user to&nbsp; distinct count mode graph. The text above the
+graph indicates which mode the graph is present. In Figure 11, the graph is in Frequency
+Mode.<o:p></o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><b style='mso-bidi-font-weight:
+normal'><span style='font-size:16.0pt;font-family:"Arial","sans-serif";
+color:blue'>Graph Histogram Features support for database engines</span></b><b style='mso-bidi-font-weight:normal'><u><span
+style='font-size:16.0pt;font-family:"Tahoma","sans-serif";color:blue'><o:p></o:p></span></u></b></p>
+
+<p class=MsoNormal style='text-align:justify'><span style='font-family:"Arial","sans-serif"'>&nbsp;<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.2in;text-align:justify;mso-layout-grid-align:
+none;text-autospace:none'><span style='font-family:"Arial","sans-serif"'>
+Table 15 shows the supported histogram features for DB2, Oracle, SQL/MX and PostgreSQL database engines.<o:p></o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+style='font-family:"Arial","sans-serif";mso-ansi-language:EN-US'>&nbsp;<o:p></o:p></span></p>
+
+<div align=center>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none;mso-border-alt:solid windowtext .5pt;
+ mso-yfti-tbllook:1184;mso-padding-alt:0in 5.4pt 0in 5.4pt'>
+ <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;height:26.85pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><b><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#7030A0'>Feature<o:p></o:p></span></b></p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><b><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#7030A0'>DB2 and SQL/MX<o:p></o:p></span></b></p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><b><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#7030A0'>Oracle and PostgreSQL<o:p></o:p></span></b></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1;height:26.1pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Frequency Mode<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2;height:26.1pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Distinct Count Mode<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Does not Support<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3;height:26.1pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Adjust Height<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.1pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Does not Support<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4;height:29.65pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:29.65pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Adjust Width<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:29.65pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports (Numeric Datatype)<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:29.65pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports (Numeric Datatype)<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:5;height:26.85pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Split Bucket<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:6;height:26.85pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Merge Bucket<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:7;height:26.85pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Add / Remove Bucket<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:8;mso-yfti-lastrow:yes;height:26.85pt'>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";color:#C00000;
+  mso-bidi-font-weight:bold'>Undo / Redo<o:p></o:p></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;
+  mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
+  padding:0in 5.4pt 0in 5.4pt;height:26.85pt'>
+  <p class=MsoListParagraph align=center style='margin-left:0in;text-align:
+  center;line-height:150%'><span style='font-size:12.0pt;mso-bidi-font-size:
+  14.0pt;line-height:150%;font-family:"Arial","sans-serif";mso-bidi-font-weight:
+  bold'>Supports<b><o:p></o:p></b></span></p>
+  </td>
+ </tr>
+</table>
+
+</div>
+
+<p class=MsoListParagraph align=center style='margin-left:0in;text-align:center;
+line-height:150%'><b><span style='font-size:12.0pt;mso-bidi-font-size:14.0pt;
+line-height:150%;font-family:"Arial","sans-serif"'>Table 15 - Graph Histogram
+support for DB Engines<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='line-height:150%'><o:p>&nbsp;</o:p></p>
+
+<p align=center style='text-align:center'><a href="../../index.htm"><span
+style='font-size:14.0pt;font-family:"Arial","sans-serif"'>Documentation Home</span></a></p>
+
+</div>
+
+</body>
+
+</html>
