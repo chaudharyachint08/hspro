@@ -1,0 +1,29 @@
+REVOKE CONNECT ON DATABASE "TPC-DS" FROM public;
+
+SELECT pg_terminate_backend(pg_stat_activity.pid)
+FROM pg_stat_activity
+WHERE pg_stat_activity.datname = 'TPC-DS';
+
+--Processes connected to & to be killed
+SELECT * FROM pg_stat_activity WHERE datname = 'TPC-DS';
+
+-- Listing all FK-PF joins
+SELECT conrelid::regclass AS "FK_Table"
+      ,CASE WHEN pg_get_constraintdef(c.oid) LIKE 'FOREIGN KEY %' THEN substring(pg_get_constraintdef(c.oid), 14, position(')' in pg_get_constraintdef(c.oid))-14) END AS "FK_Column"
+      ,CASE WHEN pg_get_constraintdef(c.oid) LIKE 'FOREIGN KEY %' THEN substring(pg_get_constraintdef(c.oid), position(' REFERENCES ' in pg_get_constraintdef(c.oid))+12, position('(' in substring(pg_get_constraintdef(c.oid), 14))-position(' REFERENCES ' in pg_get_constraintdef(c.oid))+1) END AS "PK_Table"
+      ,CASE WHEN pg_get_constraintdef(c.oid) LIKE 'FOREIGN KEY %' THEN substring(pg_get_constraintdef(c.oid), position('(' in substring(pg_get_constraintdef(c.oid), 14))+14, position(')' in substring(pg_get_constraintdef(c.oid), position('(' in substring(pg_get_constraintdef(c.oid), 14))+14))-1) END AS "PK_Column"
+FROM   pg_constraint c
+JOIN   pg_namespace n ON n.oid = c.connamespace
+WHERE  contype IN ('f', 'p ')
+AND pg_get_constraintdef(c.oid) LIKE 'FOREIGN KEY %'
+ORDER  BY pg_get_constraintdef(c.oid), conrelid::regclass::text, contype DESC;
+
+
+--Creating true copy of database, once for 1GB TPC-DS, RUN FROM postgres (default unused DB)
+--CREATE DATABASE "DS_scale_1" WITH TEMPLATE "TPC-DS";
+--Dropping Template Database (PLEASE DO NOT DO IT)
+--UPDATE pg_database SET datistemplate='false' WHERE datname='template1';
+
+
+
+imdbpy2sql.py -d /home/malhar/CSVs/JOB/ -u postgres://malhar:database@127.0.0.1/imdbload
