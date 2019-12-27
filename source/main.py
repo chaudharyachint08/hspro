@@ -76,6 +76,10 @@ IC2cost_map = {} # (query,IC)   : Cost budget of iso-cost surface
 
 ######## PERFORMANCE METRICS BEGINS ########
 
+
+eval( json["QUERY PLAN"][0]["Plan"]["Startup-Cost"] )
+eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
+
 def cost(query, plan, sel):
 	"Costs plan at some selectivity value"
 	if (query, plan, sel) not in fpc_map:
