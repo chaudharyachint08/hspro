@@ -49,18 +49,15 @@ parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=Non
 parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1
 parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0) # Maximum sel of 1
 parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack
+parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # fir q-points in discretized planes
 # String Type Arguments
-parser.add_argument("--benchmark"  , type=str  , dest='benchmark'  , default='TPC-DS')
-parser.add_argument("--master_dir" , type=str  , dest='master_dir' , default=os.path.join('.','..','experiments','bouquet_master' ))
-parser.add_argument("--plots_dir"  , type=str  , dest='plots_dir'  , default=os.path.join('.','..','experiments','bouquet_plots'))
-
-# Tuple Type Arguments
-parser.add_argument("--channel_indx" , type=eval , dest='channel_indx' , default=(0,1,2))
+parser.add_argument("--progression" , type=str  , dest='progression' , default='AP')
+parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
+parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','experiments','bouquet_master' ))
+parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','experiments','bouquet_plots'))
 
 args, unknown = parser.parse_known_args()
 globals().update(args.__dict__)
-
-
 
 plan_map = {} # (query, sel)       : PLAN_ID  , Getting ID of optimal plan at given Selectivity
 fpc_map  = {} # (query, plan, sel) : COST_VAL , FPC outputs, Evaluates a Plan at Selectivity value
