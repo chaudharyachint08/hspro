@@ -1,6 +1,15 @@
+<<<<<<< HEAD
 https://www.postgresql.org/docs/9.5/static/sql-explain.html
 https://www.tutorialspoint.com/postgresql/postgresql_python.htm
 http://www.postgresonline.com/journal/archives/171-Explain-Plans-PostgreSQL-9.0-Text,-JSON,-XML,-YAML-Part-1-You-Choose.html
 https://www.peterbe.com/plog/from-postgres-to-json-strings
 https://robots.thoughtbot.com/reading-an-explain-analyze-query-plan
 https://medium.com/@PyGuyCharles/python-sql-to-json-and-beyond-3e3a36d32853
+=======
+https://www.postgresql.org/docs/9.5/static/sql-explain.html
+https://www.tutorialspoint.com/postgresql/postgresql_python.htm
+http://www.postgresonline.com/journal/archives/171-Explain-Plans-PostgreSQL-9.0-Text,-JSON,-XML,-YAML-Part-1-You-Choose.html
+https://www.peterbe.com/plog/from-postgres-to-json-strings
+https://robots.thoughtbot.com/reading-an-explain-analyze-query-plan
+https://medium.com/@PyGuyCharles/python-sql-to-json-and-beyond-3e3a36d32853
+>>>>>>> 72dc2fdb0f896e116071f74406ca0c2954a9f573
