@@ -140,6 +140,9 @@ class ScaleVariablePlanBouquet:
 		"Read data from file"
 		return json.load( open(file_name) )
 
+	def plan_serial_helper(self,json_obj):
+		"Recursive helper function for plan_serial"
+		pass
     def plan_serial(self,xml_plan_string):
         "parsing function to convert plan object (XML/JSON) in to a string"
         json_plan = pf.xml2json(xml_plan_string)
@@ -147,9 +150,7 @@ class ScaleVariablePlanBouquet:
         return plan_string
 
     def __init__(self,benchmark,query_id,base_scale,db_scales,stderr):
-        '''
-        query is nothing but an integer, which is same as ID of epp file also
-        '''
+        "query is nothing but an integer, which is same as ID of epp file also"
         self.stderr, self.benchmark, self.query_id, self.base_scale, self.db_scales = stderr, benchmark, query_id, base_scale, db_scales
         with open(os.path.join(master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
@@ -184,7 +185,7 @@ class ScaleVariablePlanBouquet:
             cursor = connection.cursor()
             epp_list = ' and '.join(str(x) for x in self.epp)
             sel_list = ' , '.join(str(x) for x in sel)
-            cursor.execute(  'explain sel ({})({}) {}'.format(epp_list,sel_list,self.query)  )
+            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
             res = cursor.fetchone()[0]
         except (Exception, psycopg2.DatabaseError) as error :
             # MultiThreaded Logging of Exception
@@ -210,8 +211,8 @@ class ScaleVariablePlanBouquet:
             epp_list  = ' and '.join(str(x) for x in self.epp)
             sel_list  = ' , '.join(str(x) for x in sel)
             sep = os.path.sep
-            plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query, self.map[self.map[]] )
-            cursor.execute(  'explain sel ({})({}) {} fpc {}'.format(epp_list,sel_list,self.query,plan_path)  )
+            plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query_id, '{}.xml'.format(self.r2f_m[self.p2r_m[plan]]) )
+            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
             res = cursor.fetchone()[0]
         except (Exception, psycopg2.DatabaseError) as error :
             # MultiThreaded Logging of Exception
@@ -230,40 +231,54 @@ class ScaleVariablePlanBouquet:
     ######## PERFORMANCE METRICS BEGINS ########
 
     def cost(self, sel, plan, scale=None):
+    	"Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
-        "Costs plan at some selectivity value"
-        if (sel, plan, scale) not in fpc_map:
+        if (sel, plan, scale) not in self.spd2c_m:
             '# Code for FPC call to cost plan'
-            fpc_map[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
-        return fpc_map[ (sel, plan, scale) ]
+            self.spd2c_m[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
+        return self.spd2c_m[ (sel, plan, scale) ]
 
-    def SubOpt(benchmark, query, est_sel, act_sel, bouquet=False):
+    def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
         "Ratio of plan on estimated sel to plan on actual sel"
-        act_plan = plan_map[ (query, act_sel) ]
+        scale = scale if (scale is not None) else self.base_scale
+        act_plan = self.sd2p_m[ (act_sel) ]
         if not bouquet:
             'Classic Optimizer Style Metric'
-            est_plan = plan_map[ (query, est_sel) ]
+            est_plan = self.sd2p_m[ (est_sel) ]
             return cost(query, est_plan, act_sel) / cost(query, act_plan, act_sel)
         else:
             'Bouquet Style Metric'
-            plan_list = ExecPlanBouquet(query, act_sel)
+            exec_list = self.get_bouquet_exec_list(act_sel)
             bouquet_cost = 0
-            for plan in plan_list[:-1]: # Since up-to second last plan, budget based execution
-                bouquet_cost += IC2cost_map[ (query, plan2IC_map[ (query,plan) ] ) ]
-            bouquet_cost += cost(query, est_plan, act_sel)
-            return bouquet_cost / cost(query, act_plan, act_sel)
+            for plan in exec_list[:-1]: # Since up-to second last plan, budget based execution
+            	bouquet_cost += self.id2c_m[ (self.pd2i_m[(plan,scale)], scale) ]
+            bouquet_cost += self.cost(act_sel, plan, scale)
+            return bouquet_cost / self.cost(act_sel, act_plan, scale)
 
-    def WorstSubOpt(query, act_sel):
+    def WorstSubOpt(self, act_sel, scale=None):
         "SubOpt for all possible est_selectivities"
-        return max( SubOpt(query, est_sel, act_sel) for est_sel in sel_range)
+        scale = scale if (scale is not None) else self.base_scale
+        return max( self.SubOpt(act_sel, est_sel, scale) for est_sel in sel_range )
 
-    def MaxSubOpt(query):
+    def MaxSubOpt(self, scale=None, bouquet=False):
         "Global worst case"
-        return max( WorstSubOpt(query, act_sel) for act_sel in sel_range)
+        scale = scale if (scale is not None) else self.base_scale
+        if not bouquet:
+            'Classic Optimizer Style Metric'
+            return max( self.WorstSubOpt(act_sel, scale) for act_sel in sel_range )
+        else:
+            'Bouquet Style Metric'
+            return max( self.SubOpt(act_sel, -1, scale, bouquet=True) for act_sel in sel_range )
 
-    def AvgSubOpt(query):
+    def AvgSubOpt(self, scale=None, bouquet=False):
         "Average suboptimality over ESS under uniformity assumption"
-        return sum( (SubOpt(query, est_sel, act_sel) for est_sel in sel_range for act_sel in sel_range) ) / (len(sel_range)**2)
+        scale = scale if (scale is not None) else self.base_scale
+        if not bouquet:
+            'Classic Optimizer Style Metric'
+        else:
+            'Bouquet Style Metric'
+
+        return sum( (self.SubOpt(act_sel, est_sel) for est_sel in sel_range for act_sel in sel_range) ) / (len(sel_range)**2)
 
     def MaxHarm(query):
         "Harm using Plan Bouquet, over Classic Optimizer"
@@ -313,12 +328,6 @@ class ScaleVariablePlanBouquet:
 
 
 ######## PLAN BOUQUET ENDS ########
-
-if not os.path.isdir(master_dir):
-    os.makedirs(master_dir)
-if not os.path.isdir(plots_dir):
-    os.makedirs(plots_dir)
-
 
 
 if __name__=='__main2__':

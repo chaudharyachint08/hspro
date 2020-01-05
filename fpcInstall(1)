@@ -1,0 +1,56 @@
+sudo apt-get install libxml2-dev
+
+locate libxml2.so.2  //get the location for next step
+
+sudo rm /usr/lib/x86_64-linux-gnu/libxml2.so.2
+or
+sudo rm (location of libxml2.so.2)\
+
+sudo ln -s /usr/lib/x86_64-linux-gnu/libxml2.so.2.7.8 /usr/lib/x86_64-linux-gnu/libxml2.so.2
+
+rajmohan@rajmohan:~/projects/postgresql-9.3.2/contrib$ make all
+rajmohan@rajmohan:~/projects/postgresql-9.3.2/contrib$ make install                        
+
+in eclipse project properties
+
+Right-click your CDT project and select Properties.
+Expand C/C++ General and select Paths and Symbols.
+Select GNU C++ under Languages
+Click Add to define new element
+Write in the Directory field /usr/include/libxml2
+Re-build
+
+rajmohan@rajmohan:~/projects/postgresql-9.3.2$ ./configure --prefix=~/projects/postgresql-9.3.2 --enable-depend --enable-cassert --enable-debug --with-libxml CFLAGS=-O0
+(CFLAGS=-O0 here disables optimization to an extend so that gdb debugging will be shown smooth in eclipse)
+
+make all
+make install
+
+then in eclipse make target view..install right click and give make target/
+then build all
+
+for server:
+----------
+open postgresql.conf file inside TPCH_Database and give shared_preload_libraries = fpc_xml
+now copy fpc_xml folder and put it into contrib folder.
+
+then copy 'fpc_xml.so' file into folder /home/rajmohan/projects/lib/postgresql
+now run postgres. fpc_xml library loaded msg appears in prompt of eclipse.
+
+for stand-alone:
+---------------
+open postgresql.conf file inside TPCH_Database and give local_preload_libraries = fpc_xml
+
+(in your pgsql9.3 code go to file pg_config.h and
+check whether 
+#define USE_LIBXML 1 is enabled and
+HAVE_LIBXML is also defined the same way)
+
+to compile and run fpc_xml plugin:
+
+Under contrib folder, in fpc_xml folder open makefile and change the path as shown below.
+PG_CONFIG = /home/rajmohan/projects/bin/pg_config
+
+then make clean
+make install
+
