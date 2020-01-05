@@ -82,7 +82,6 @@ import plan_format as pf
 ######## STANDARD & THIRD PARTY LIBRARIES IMPORTS ENDS ########
 
 
-
 ######## COMMAND LINE ARGUMENTS BEGINS ########
 
 parser = argparse.ArgumentParser()
@@ -122,31 +121,28 @@ globals().update(args.__dict__)
 ######## GLOBAL DATA-STRUCTURES BEGINS ########
 
 pwd = os.getcwd()
+# eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
 
 ######## GLOBAL DATA-STRUCTURES ENDS ########
 
 
-eval( json["QUERY PLAN"][0]["Plan"]["Startup-Cost"] )
-eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
-
-
 class ScaleVariablePlanBouquet:
     ""
-    def save_dict(dict_obj,file_name):
+    def save_dict(self, dict_obj, file_name):
 		"Serialize data into file"
 		json.dump( dict_obj, open(file_name,'w') )
-
-	def load_dict(file_name)
+	def load_dict(self, file_name)
 		"Read data from file"
 		return json.load( open(file_name) )
 
 	def plan_serial_helper(self,json_obj):
 		"Recursive helper function for plan_serial"
-		pass
+		# CHECKPOINT : write code here for JSON to serial string conversion
+		return 'PLAN_STRING_REPRESENTATION'
     def plan_serial(self,xml_plan_string):
         "parsing function to convert plan object (XML/JSON) in to a string"
-        json_plan = pf.xml2json(xml_plan_string)
-        # CHECKPOINT : write code here for JSON to serial string conversion
+        json_obj = pf.xml2json(res,mode='string')
+        plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
         return plan_string
 
     def __init__(self,benchmark,query_id,base_scale,db_scales,stderr):
@@ -219,8 +215,7 @@ class ScaleVariablePlanBouquet:
             print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
             res = None
         else:
-            # CHECKPOINT, converting XML2JSON, then extracting cost
-            json_obj = pf.xml2json(res)
+            json_obj = pf.xml2json(res,mode='string')
             res = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
         finally:
             if connection:
@@ -237,52 +232,54 @@ class ScaleVariablePlanBouquet:
             '# Code for FPC call to cost plan'
             self.spd2c_m[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
         return self.spd2c_m[ (sel, plan, scale) ]
-
     def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
         "Ratio of plan on estimated sel to plan on actual sel"
         scale = scale if (scale is not None) else self.base_scale
         act_plan = self.sd2p_m[ (act_sel) ]
         if not bouquet:
             'Classic Optimizer Style Metric'
-            est_plan = self.sd2p_m[ (est_sel) ]
-            return cost(query, est_plan, act_sel) / cost(query, act_plan, act_sel)
+            est_plan = self.sd2p_m[ (est_sel, scale) ]
+            return self.cost(act_sel, est_plan, scale) / self.cost(act_sel, act_plan, scale)
         else:
             'Bouquet Style Metric'
-            exec_list = self.get_bouquet_exec_list(act_sel)
+            exec_list = self.get_bouquet_exec_list(act_sel, scale)
             bouquet_cost = 0
             for plan in exec_list[:-1]: # Since up-to second last plan, budget based execution
             	bouquet_cost += self.id2c_m[ (self.pd2i_m[(plan,scale)], scale) ]
-            bouquet_cost += self.cost(act_sel, plan, scale)
+            bouquet_cost += self.cost(act_sel, exec_list[-1], scale)
             return bouquet_cost / self.cost(act_sel, act_plan, scale)
-
     def WorstSubOpt(self, act_sel, scale=None):
         "SubOpt for all possible est_selectivities"
         scale = scale if (scale is not None) else self.base_scale
-        return max( self.SubOpt(act_sel, est_sel, scale) for est_sel in sel_range )
-
+        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
+        return max( self.SubOpt(act_sel, est_sel, scale) for est_sel in epp_iterator )
     def MaxSubOpt(self, scale=None, bouquet=False):
         "Global worst case"
         scale = scale if (scale is not None) else self.base_scale
+        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
         if not bouquet:
             'Classic Optimizer Style Metric'
-            return max( self.WorstSubOpt(act_sel, scale) for act_sel in sel_range )
+            return max( self.WorstSubOpt(act_sel, scale) for act_sel in epp_iterator )
         else:
             'Bouquet Style Metric'
-            return max( self.SubOpt(act_sel, -1, scale, bouquet=True) for act_sel in sel_range )
-
+            return max( self.SubOpt(act_sel, -1, scale, bouquet=True) for act_sel in epp_iterator )
     def AvgSubOpt(self, scale=None, bouquet=False):
         "Average suboptimality over ESS under uniformity assumption"
         scale = scale if (scale is not None) else self.base_scale
+        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
         if not bouquet:
             'Classic Optimizer Style Metric'
+            epp_iterator2 = itertools.product(*([sel_range,]*len(self.epp)))
+            return sum( (self.SubOpt(act_sel, est_sel) for est_sel in epp_iterator for act_sel in epp_iterator) ) / ((len(sel_range)**len(self.epp))**2)
         else:
             'Bouquet Style Metric'
-
-        return sum( (self.SubOpt(act_sel, est_sel) for est_sel in sel_range for act_sel in sel_range) ) / (len(sel_range)**2)
-
-    def MaxHarm(query):
+            return sum( (self.SubOpt(act_sel, est_sel) for act_sel in epp_iterator) ) / (len(sel_range)**len(self.epp))
+    def MaxHarm(self, scale=None):
         "Harm using Plan Bouquet, over Classic Optimizer"
-        return max( (SubOpt(query,est_sel=-1,act_sel,bouquet=True)/WorstSubOpt(query, act_sel)) for act_sel in sel_range ) - 1
+        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
+        return max(  ( self.SubOpt(act_sel,-1,scale,bouquet=True) / self.WorstSubOpt(act_sel,scale) ) for act_sel in epp_iterator  ) - 1
+
+    ######## PERFORMANCE METRICS ENDS ########
 
 
     def base_gen(self):

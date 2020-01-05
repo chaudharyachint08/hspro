@@ -7,7 +7,7 @@ import dicttoxml  as j2x
 from xml.dom.minidom import parseString
 
 
-def xml2json(xml_path,json_path,mode='string'):
+def xml2json(xml_path,json_path='converted.json',mode='file'):
     "Converts XML to JSON on Directory"
     '''
     This file can be further improved, as values are all string in JSON created
@@ -16,8 +16,9 @@ def xml2json(xml_path,json_path,mode='string'):
     Since, only final costs are required they can be extracted by eval() on root value of costs
     '''
     if mode=='string':
-        json_obj = x2j.parse(xml_path)
-        return json_obj
+        json_plan = x2j.parse(xml_path)
+        res = json_plan["explain"]["Query"]["Plan"]
+        return {"QUERY PLAN":[{"Plan":res}]}
     else:
         with open(xml_path) as in_file:
             xml = in_file.read()

@@ -1,0 +1,202 @@
+{
+  "QUERY PLAN": [
+    {
+      "Plan": {
+        "Node-Type": "Sort",
+        "Output": {
+          "Item": [
+            "dt.d_year",
+            "item.i_brand_id",
+            "item.i_brand",
+            "(sum(store_sales.ss_ext_sales_price))"
+          ]
+        },
+        "Sort-Key": {
+          "Item": [
+            "dt.d_year",
+            "(sum(store_sales.ss_ext_sales_price))",
+            "item.i_brand_id"
+          ]
+        },
+        "Plans": {
+          "Plan": {
+            "Node-Type": "Aggregate",
+            "Strategy": "Hashed",
+            "Parent-Relationship": "Outer",
+            "Output": {
+              "Item": [
+                "dt.d_year",
+                "item.i_brand_id",
+                "item.i_brand",
+                "sum(store_sales.ss_ext_sales_price)"
+              ]
+            },
+            "Group-Key": {
+              "Item": [
+                "dt.d_year",
+                "item.i_brand",
+                "item.i_brand_id"
+              ]
+            },
+            "Plans": {
+              "Plan": {
+                "Node-Type": "Hash Join",
+                "Parent-Relationship": "Outer",
+                "Join-Type": "Inner",
+                "Output": {
+                  "Item": [
+                    "dt.d_year",
+                    "store_sales.ss_ext_sales_price",
+                    "item.i_brand_id",
+                    "item.i_brand"
+                  ]
+                },
+                "Hash-Cond": "(store_sales.ss_sold_date_sk = dt.d_date_sk)",
+                "Plans": {
+                  "Plan": [
+                    {
+                      "Node-Type": "Nested Loop",
+                      "Parent-Relationship": "Outer",
+                      "Join-Type": "Inner",
+                      "Output": {
+                        "Item": [
+                          "store_sales.ss_ext_sales_price",
+                          "store_sales.ss_sold_date_sk",
+                          "item.i_brand_id",
+                          "item.i_brand"
+                        ]
+                      },
+                      "Plans": {
+                        "Plan": [
+                          {
+                            "Node-Type": "Bitmap Heap Scan",
+                            "Parent-Relationship": "Outer",
+                            "Relation-Name": "item",
+                            "Schema": "public",
+                            "Alias": "item",
+                            "Output": {
+                              "Item": [
+                                "item.i_item_sk",
+                                "item.i_item_id",
+                                "item.i_rec_start_date",
+                                "item.i_rec_end_date",
+                                "item.i_item_desc",
+                                "item.i_current_price",
+                                "item.i_wholesale_cost",
+                                "item.i_brand_id",
+                                "item.i_brand",
+                                "item.i_class_id",
+                                "item.i_class",
+                                "item.i_category_id",
+                                "item.i_category",
+                                "item.i_manufact_id",
+                                "item.i_manufact",
+                                "item.i_size",
+                                "item.i_formulation",
+                                "item.i_color",
+                                "item.i_units",
+                                "item.i_container",
+                                "item.i_manager_id",
+                                "item.i_product_name"
+                              ]
+                            },
+                            "Recheck-Cond": "(item.i_manufact_id <= 3)",
+                            "Plans": {
+                              "Plan": {
+                                "Node-Type": "Bitmap Index Scan",
+                                "Parent-Relationship": "Outer",
+                                "Index-Name": "item_i_manufact_id_idx",
+                                "Index-Cond": "(item.i_manufact_id <= 3)"
+                              }
+                            }
+                          },
+                          {
+                            "Node-Type": "Bitmap Heap Scan",
+                            "Parent-Relationship": "Inner",
+                            "Relation-Name": "store_sales",
+                            "Schema": "public",
+                            "Alias": "store_sales",
+                            "Output": {
+                              "Item": [
+                                "store_sales.ss_sold_date_sk",
+                                "store_sales.ss_sold_time_sk",
+                                "store_sales.ss_item_sk",
+                                "store_sales.ss_customer_sk",
+                                "store_sales.ss_cdemo_sk",
+                                "store_sales.ss_hdemo_sk",
+                                "store_sales.ss_addr_sk",
+                                "store_sales.ss_store_sk",
+                                "store_sales.ss_promo_sk",
+                                "store_sales.ss_ticket_number",
+                                "store_sales.ss_quantity",
+                                "store_sales.ss_wholesale_cost",
+                                "store_sales.ss_list_price",
+                                "store_sales.ss_sales_price",
+                                "store_sales.ss_ext_discount_amt",
+                                "store_sales.ss_ext_sales_price",
+                                "store_sales.ss_ext_wholesale_cost",
+                                "store_sales.ss_ext_list_price",
+                                "store_sales.ss_ext_tax",
+                                "store_sales.ss_coupon_amt",
+                                "store_sales.ss_net_paid",
+                                "store_sales.ss_net_paid_inc_tax",
+                                "store_sales.ss_net_profit"
+                              ]
+                            },
+                            "Recheck-Cond": "(store_sales.ss_item_sk = item.i_item_sk)",
+                            "Plans": {
+                              "Plan": {
+                                "Node-Type": "Bitmap Index Scan",
+                                "Parent-Relationship": "Outer",
+                                "Index-Name": "store_sales_pkey",
+                                "Index-Cond": "(store_sales.ss_item_sk = item.i_item_sk)"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "Node-Type": "Hash",
+                      "Parent-Relationship": "Inner",
+                      "Output": {
+                        "Item": [
+                          "dt.d_year",
+                          "dt.d_date_sk"
+                        ]
+                      },
+                      "Plans": {
+                        "Plan": {
+                          "Node-Type": "Bitmap Heap Scan",
+                          "Parent-Relationship": "Outer",
+                          "Relation-Name": "date_dim",
+                          "Schema": "public",
+                          "Alias": "dt",
+                          "Output": {
+                            "Item": [
+                              "dt.d_year",
+                              "dt.d_date_sk"
+                            ]
+                          },
+                          "Recheck-Cond": "(dt.d_moy <= 4)",
+                          "Plans": {
+                            "Plan": {
+                              "Node-Type": "Bitmap Index Scan",
+                              "Parent-Relationship": "Outer",
+                              "Index-Name": "date_dim_d_moy_idx",
+                              "Index-Cond": "(dt.d_moy <= 4)"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
