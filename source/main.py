@@ -8,7 +8,7 @@ Syntax for Plan Enforcing
 SQL_QUERY fpc XML_PLAN_PATH
 
 
-
+hspro (Home Directory of Project)
 .
 ├── bouquet_master
 │   ├── tpcds
@@ -75,7 +75,7 @@ for i in ls:
     exec('import {0} as {1}'.format(i[0],i[-1]))
     exec('print("Version of {0}",{1}.__version__)'.format(i[0],i[-1]))
 
-# Importing DBMS libraries, and custom libraries
+# Importing DBMS libraries, and custom made libraries
 import psycopg2
 import plan_format as pf
 
@@ -91,12 +91,13 @@ parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False)
 parser.add_argument("--new_plan" , type=eval , dest='new_plan' , default=False)
 parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False)
 parser.add_argument("--covering" , type=eval , dest='covering' , default=False)
-parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False)
-parser.add_argument("--random_c" , type=eval , dest='random_c' , default=False)
+parser.add_argument("--random_s" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.1 Randomized Intra-Contour Plan Sequence
+parser.add_argument("--random_p" , type=eval , dest='random_c' , default=False) # Flag for Sec 4.2 Randomized Contour Placement (with discretization)
 # Int Type Arguments
 parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
 parser.add_argument("--resolution" , type=eval , dest='resolution' , default=1000)
 parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
+parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours
 parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None)
 # Float Type Arguments
 parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0) # IC cost ratio for bouquet
@@ -167,8 +168,10 @@ class ScaleVariablePlanBouquet:
         self.spd2c_m  = {} # (sel,plan,scale) : abstract_cost value of plan at some selectivity for given scale of benchmark (FPC mapping)
         # Maps for Iso-cost surfaces
         self.id2p_m     = {} # (IC_id, scale)   : list of plans on iso-cost surface for given scale
+        self.ipd2s_m     = {} # (IC_id, plan, scale)   : list of selectivity values of each plan on IC surface
         self.pd2i_m     = {} # (plan_id, scale) : IC_id , iso-cost contour id of any plan at some given scale
         self.id2c_m     = {} # (IC_id,scale)    : abstract_cost, cost budget of IC_id surface for given scale
+
 
     def get_plan(self, sel, scale):
         "finding optimal plan at some seletivity value"
@@ -226,6 +229,7 @@ class ScaleVariablePlanBouquet:
     ######## PERFORMANCE METRICS BEGINS ########
 
     def cost(self, sel, plan, scale=None):
+        scale = scale if (scale is not None) else self.base_scale
     	"Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan, scale) not in self.spd2c_m:
