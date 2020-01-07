@@ -8,7 +8,7 @@ Syntax for Plan Enforcing
 SQL_QUERY fpc XML_PLAN_PATH
 
 
-hspro (Home Directory of Project)
+hspro (Home Directory of Project) # CHECKPOINT, next directory should be r_ratio value, in which all maps for re-excution can be stored
 .
 ├── bouquet_master
 │   ├── tpcds
@@ -44,7 +44,7 @@ hspro (Home Directory of Project)
 │   └── tpch
 │       │
 │       *
-└── bouquet_plots
+├── bouquet_plots
 │   │
 │   *
 └── source
@@ -95,7 +95,7 @@ parser.add_argument("--random_s" , type=eval , dest='random_p' , default=False) 
 parser.add_argument("--random_p" , type=eval , dest='random_c' , default=False) # Flag for Sec 4.2 Randomized Contour Placement (with discretization)
 # Int Type Arguments
 parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
-parser.add_argument("--resolution" , type=eval , dest='resolution' , default=1000)
+parser.add_argument("--resolution" , type=eval , dest='resolution' , default=100)
 parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
 parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours
 parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None)
@@ -129,35 +129,28 @@ pwd = os.getcwd()
 
 class ScaleVariablePlanBouquet:
     ""
-    def save_dict(self, dict_obj, file_name):
-		"Serialize data into file"
-		json.dump( dict_obj, open(file_name,'w') )
-	def load_dict(self, file_name)
-		"Read data from file"
-		return json.load( open(file_name) )
-
-	def plan_serial_helper(self,json_obj):
-		"Recursive helper function for plan_serial"
-		# CHECKPOINT : write code here for JSON to serial string conversion
-		return 'PLAN_STRING_REPRESENTATION'
-    def plan_serial(self,xml_plan_string):
-        "parsing function to convert plan object (XML/JSON) in to a string"
-        json_obj = pf.xml2json(res,mode='string')
-        plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
-        return plan_string
-
     def __init__(self,benchmark,query_id,base_scale,db_scales,stderr):
         "query is nothing but an integer, which is same as ID of epp file also"
         self.stderr, self.benchmark, self.query_id, self.base_scale, self.db_scales = stderr, benchmark, query_id, base_scale, db_scales
         with open(os.path.join(master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
-        with open(os.path.join(master_dir,self.benchmark,'epp','{}.epp'.format(query_id))) as f:
-            self.epp = []
-            for line in f.readlines():
-                line = line.strip()
-                if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
-                    self.epp.append( line.split('|')[0].strip() )
-        
+        try:
+	        with open(os.path.join(master_dir,self.benchmark,'epp','{}.epp'.format(query_id))) as f:
+	            self.epp = []
+	            for line in f.readlines():
+	                line = line.strip()
+	                if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
+	                    self.epp.append( line.split('|')[0].strip() )
+        except:
+        	self.bouquet_runnable = False
+        else:
+        	self.bouquet_runnable = True if len(self.epp) else False
+
+        if anorexic:
+        	self.anorexic_lambda = anorexic_lambda
+        else:
+        	self.anorexic_lambda = 0.0
+
         'Naming conventions for maps'
         # [c,d,f,i,p,r,s] are [cost, base_scale, file_name(without_extension), IC_id, plan_id, representation_plan(serial string), selectivity]
         self.r2f_m = {} # (plan_string)     : file_name(without extension)
@@ -166,11 +159,13 @@ class ScaleVariablePlanBouquet:
         # Above 3 have cyclic, and any of them can be used to derive any other, using either one or two maps
         self.sd2p_m   = {} # (sel,scale)      : plan_id , (returns optimal plan_id at sel value for given scale of benchmark)
         self.spd2c_m  = {} # (sel,plan,scale) : abstract_cost value of plan at some selectivity for given scale of benchmark (FPC mapping)
-        # Maps for Iso-cost surfaces
+        # Maps for Iso-cost surfaces, indexed from 0 as opposite from paper convention
         self.id2p_m     = {} # (IC_id, scale)   : list of plans on iso-cost surface for given scale
         self.ipd2s_m     = {} # (IC_id, plan, scale)   : list of selectivity values of each plan on IC surface
         self.pd2i_m     = {} # (plan_id, scale) : IC_id , iso-cost contour id of any plan at some given scale
         self.id2c_m     = {} # (IC_id,scale)    : abstract_cost, cost budget of IC_id surface for given scale
+        # Anorexic Reduction & Plan identity mappings, if anorexic_reduction is disabled, anorexic_lambda is 0.0 and reduction is not called
+        self.anorexic_m = {} # (self.anorexic_lambda, plan_id) : substitution plan using anorexic reduction, identity for anorexic_lambda
 
 
     def get_plan(self, sel, scale):
@@ -229,25 +224,25 @@ class ScaleVariablePlanBouquet:
     ######## PERFORMANCE METRICS BEGINS ########
 
     def cost(self, sel, plan, scale=None):
-        scale = scale if (scale is not None) else self.base_scale
     	"Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan, scale) not in self.spd2c_m:
-            '# Code for FPC call to cost plan'
-            self.spd2c_m[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
+        	while True:
+        		val = self.get_cost(sel, plan, scale)
+        		if val is not None:
+        			break
+            self.spd2c_m[ (sel, plan, scale) ] = val
         return self.spd2c_m[ (sel, plan, scale) ]
     def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
         "Ratio of plan on estimated sel to plan on actual sel"
         scale = scale if (scale is not None) else self.base_scale
-        act_plan = self.sd2p_m[ (act_sel) ]
-        if not bouquet:
-            'Classic Optimizer Style Metric'
+        act_plan = self.sd2p_m[ (act_sel, scale) ]
+        if not bouquet: # Classic Optimizer Style Metric
             est_plan = self.sd2p_m[ (est_sel, scale) ]
             return self.cost(act_sel, est_plan, scale) / self.cost(act_sel, act_plan, scale)
-        else:
-            'Bouquet Style Metric'
-            exec_list = self.get_bouquet_exec_list(act_sel, scale)
+        else: # Bouquet Style Metric
             bouquet_cost = 0
+            exec_list = self.simulate(act_sel, scale)
             for plan in exec_list[:-1]: # Since up-to second last plan, budget based execution
             	bouquet_cost += self.id2c_m[ (self.pd2i_m[(plan,scale)], scale) ]
             bouquet_cost += self.cost(act_sel, exec_list[-1], scale)
@@ -256,38 +251,92 @@ class ScaleVariablePlanBouquet:
         "SubOpt for all possible est_selectivities"
         scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        return max( self.SubOpt(act_sel, est_sel, scale) for est_sel in epp_iterator )
+        return max( self.SubOpt(act_sel, est_sel, scale, bouquet=False) for est_sel in epp_iterator )
     def MaxSubOpt(self, scale=None, bouquet=False):
         "Global worst case"
         scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        if not bouquet:
-            'Classic Optimizer Style Metric'
+        if not bouquet: # Classic Optimizer Style Metric
             return max( self.WorstSubOpt(act_sel, scale) for act_sel in epp_iterator )
-        else:
-            'Bouquet Style Metric'
+        else: # Bouquet Style Metric
             return max( self.SubOpt(act_sel, -1, scale, bouquet=True) for act_sel in epp_iterator )
     def AvgSubOpt(self, scale=None, bouquet=False):
         "Average suboptimality over ESS under uniformity assumption"
         scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        if not bouquet:
-            'Classic Optimizer Style Metric'
+        if not bouquet: # Classic Optimizer Style Metric
             epp_iterator2 = itertools.product(*([sel_range,]*len(self.epp)))
             return sum( (self.SubOpt(act_sel, est_sel) for est_sel in epp_iterator for act_sel in epp_iterator) ) / ((len(sel_range)**len(self.epp))**2)
-        else:
-            'Bouquet Style Metric'
+        else: # Bouquet Style Metric
             return sum( (self.SubOpt(act_sel, est_sel) for act_sel in epp_iterator) ) / (len(sel_range)**len(self.epp))
     def MaxHarm(self, scale=None):
         "Harm using Plan Bouquet, over Classic Optimizer"
+        scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
         return max(  ( self.SubOpt(act_sel,-1,scale,bouquet=True) / self.WorstSubOpt(act_sel,scale) ) for act_sel in epp_iterator  ) - 1
 
     ######## PERFORMANCE METRICS ENDS ########
 
+    def save_dict(self, dict_obj, file_name):
+		"Serialize data into file"
+		json.dump( dict_obj, open(file_name,'w') )
+	def load_dict(self, file_name)
+		"Read data from file"
+		return json.load( open(file_name) )
+
+	def plan_serial_helper(self,json_obj):
+		"Recursive helper function for plan_serial"
+		# CHECKPOINT : write code here for JSON to serial string conversion
+		return 'PLAN_STRING_REPRESENTATION'
+    def plan_serial(self,xml_plan_string):
+        "parsing function to convert plan object (XML/JSON) in to a string"
+        json_obj = pf.xml2json(res,mode='string')
+        plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
+        return plan_string
+
+    def store_plan(self, xml_string):
+    	"method to store XML & JSON variants on plans in respective directories, and Creating entries in "
+        sep = os.path.sep
+        # Writing XML plan into suitable plan directory & file name conventions
+        xml_plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query_id)
+        if not is os.path.dir(xml_plan_path):
+        	os.makedirs(xml_plan_path)
+        with open( os.path.join(xml_plan_path,'{}.xml'.format(len(os.listdir(xml_plan_path)))) ,'w') as f:
+        	f.write( xml_string )
+    	# Writing JSON plan into suitable plan directory & file name conventions
+        json_plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','json', self.query_id)
+        if not is os.path.dir(json_plan_path):
+        	os.makedirs(json_plan_path)
+        json_obj = pf.xml2json(xml_string,mode='string')
+        len_dir = len(os.listdir(json_plan_path))
+        self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(len_dir)) )
+        return len_dir
 
     def base_gen(self):
         "Step 0: Find cost values for each iso-cost surface"
+        scale = scale if (scale is not None) else self.base_scale
+        sel_min, sel_max = (sel_range[0],)*len(self.epp), (sel_range[-1],)*len(self.epp)
+
+        plan_min_xml, plan_max_xml = self.get_plan(sel_min, scale), self.get_plan(sel_max, scale)
+        plan_min, plan_max = self.store_plan(plan_min_xml), self.store_plan(plan_max_xml)
+        plan_min_serial, plan_max_serial = self.plan_serial(plan_min_xml), self.plan_serial(plan_max_xml)
+        # Setting map entries for plan_id, plan_file and plan_string representations
+        self.r2f_m[plan_min_serial], self.r2f_m[plan_max_serial] = plan_min, plan_max
+        self.f2p_m[plan_min], self.f2p_m[plan_max] = plan_min, plan_max
+        self.p2r_m[plan_min], self.p2r_m[plan_max] = plan_min_serial, plan_max_serial
+        # Setting plan entries for optimal plan at locations and cost values at those location
+        self.sd2p_m[(sel_min,scale)], self.sd2p_m[(sel_max,scale)] = plan_min, plan_max
+        self.C_min, self.C_max = self.cost(sel_min, plan_min, scale), self.cost(sel_max, plan_max, scale)
+        self.spd2c_m[(sel_min,plan_min,scale)], self.spd2c_m[(sel_max,plan_max,scale)] = self.C_min, self.C_max
+        self.IC_count = int( np.floor(  np.log(self.C_max/self.C_min) / np.log(r_ratio)  )+1 )
+        # Maps for Iso-cost surfaces, indexed from 0 as opposite from paper convention
+        # Also for now only last IC is known and have one optimal plan at it, we can create its entries
+        self.id2p_m[(self.IC_count-1,scale)] = [plan_max]
+        self.ipd2s_m[(0,plan_max,scale)] = [sel_max]
+        self.pd2i_m[(plan_max,scale)] = self.IC_count-1
+		for ix in range(self.IC_count):
+	        self.id2c_m[(ix,scale)] = self.C_max*( (1/r_ratio) ** ( self.IC_count-(ix+1) ) )
+        self.anorexic_m[(0.0,plan_min)], self.anorexic_m[(0.0,plan_max)] = plan_min, plan_max
         pass
 
     def nexus(self):
@@ -318,13 +367,17 @@ class ScaleVariablePlanBouquet:
 
     def run(self):
         ""
-        self.base_gen()
-        self.nexus()
-        if anorexic:
-            self.anorexic_reduction()
-        if covering:
-            self.covering_sequence()
-        self.simulate()
+        if self.bouquet_runnable:
+	        self.base_gen()
+	        self.nexus()
+	        if self.anorexic_lambda:
+	            self.anorexic_reduction()
+	        else: # Identity mapping if Anorexic_reduction is switched off
+	        	for plan in self.p2r_m:
+	        		self.anorexic_m[ (plan) ] = plan
+	        if covering:
+	            self.covering_sequence()
+	        # exec_list = self.simulate(act_sel, scale) # This function is indeed called from metrices, and call be later from anywhere to get list of execution
 
 
 
