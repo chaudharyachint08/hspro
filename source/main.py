@@ -130,7 +130,7 @@ pwd = os.getcwd()
 class ScaleVariablePlanBouquet:
     ""
     def __init__(self,benchmark,query_id,base_scale,db_scales,stderr):
-        "query is nothing but an integer, which is same as ID of epp file also"
+        "Instance initializer: query is nothing but an integer, which is same as ID of epp file also"
         self.stderr, self.benchmark, self.query_id, self.base_scale, self.db_scales = stderr, benchmark, query_id, base_scale, db_scales
         with open(os.path.join(master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
@@ -168,70 +168,76 @@ class ScaleVariablePlanBouquet:
         self.anorexic_m = {} # (self.anorexic_lambda, plan_id) : substitution plan using anorexic reduction, identity for anorexic_lambda
 
 
+    ######## DATA-BASE CONNECTION METHODS ########
+    
     def get_plan(self, sel, scale):
         "finding optimal plan at some seletivity value"
-        try:
-            connection = psycopg2.connect(user = "sa",
-                                          password = "database",
-                                          host = "127.0.0.1",
-                                          port = "5432",
-                                          database = "{}-{}".format(self.benchmark,scale))
-            cursor = connection.cursor()
-            epp_list = ' and '.join(str(x) for x in self.epp)
-            sel_list = ' , '.join(str(x) for x in sel)
-            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
-            res = cursor.fetchone()[0]
-        except (Exception, psycopg2.DatabaseError) as error :
-            # MultiThreaded Logging of Exception
-            print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
-            res = None
-        else:
-            pass
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
+        while True:
+	        try:
+	            connection = psycopg2.connect(user = "sa",
+	                                          password = "database",
+	                                          host = "127.0.0.1",
+	                                          port = "5432",
+	                                          database = "{}-{}".format(self.benchmark,scale))
+	            cursor = connection.cursor()
+	            epp_list = ' and '.join(str(x) for x in self.epp)
+	            sel_list = ' , '.join(str(x) for x in sel)
+	            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
+	            res = cursor.fetchone()[0]
+	        except (Exception, psycopg2.DatabaseError) as error :
+	            # MultiThreaded Logging of Exception
+	            print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
+	            break_flag = False
+	        else:
+	            break_flag = True
+	        finally:
+	            if connection:
+	                cursor.close()
+	                connection.close()
+	            if break_flag:
+	            	break
         return res
 
     def get_cost(self, sel, plan, scale):
         "FPC of plan at some other selectivity value"
-        try:
-            connection = psycopg2.connect(user = "sa",
-                                          password = "database",
-                                          host = "127.0.0.1",
-                                          port = "5432",
-                                          database = "{}-{}".format(self.benchmark,scale))
-            cursor = connection.cursor()
-            epp_list  = ' and '.join(str(x) for x in self.epp)
-            sel_list  = ' , '.join(str(x) for x in sel)
-            sep = os.path.sep
-            plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query_id, '{}.xml'.format(self.r2f_m[self.p2r_m[plan]]) )
-            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
-            res = cursor.fetchone()[0]
-        except (Exception, psycopg2.DatabaseError) as error :
-            # MultiThreaded Logging of Exception
-            print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
-            res = None
-        else:
-            json_obj = pf.xml2json(res,mode='string')
-            res = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
+        while True:
+	        try:
+	            connection = psycopg2.connect(user = "sa",
+	                                          password = "database",
+	                                          host = "127.0.0.1",
+	                                          port = "5432",
+	                                          database = "{}-{}".format(self.benchmark,scale))
+	            cursor = connection.cursor()
+	            epp_list  = ' and '.join(str(x) for x in self.epp)
+	            sel_list  = ' , '.join(str(x) for x in sel)
+	            sep = os.path.sep
+	            plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query_id, '{}.xml'.format(self.r2f_m[self.p2r_m[plan]]) )
+	            cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
+	            res = cursor.fetchone()[0]
+	        except (Exception, psycopg2.DatabaseError) as error :
+	            # MultiThreaded Logging of Exception
+	            print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
+                break_flag = False
+	        else:
+	            json_obj = pf.xml2json(res,mode='string')
+	            res = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
+                break_flag = True
+	        finally:
+	            if connection:
+	                cursor.close()
+	                connection.close()
+	            if break_flag:
+	            	break
         return res
 
-    ######## PERFORMANCE METRICS BEGINS ########
+
+    ######## PERFORMANCE METRICS METHODS ########
 
     def cost(self, sel, plan, scale=None):
     	"Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan, scale) not in self.spd2c_m:
-        	while True:
-        		val = self.get_cost(sel, plan, scale)
-        		if val is not None:
-        			break
-            self.spd2c_m[ (sel, plan, scale) ] = val
+            self.spd2c_m[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
         return self.spd2c_m[ (sel, plan, scale) ]
     def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
         "Ratio of plan on estimated sel to plan on actual sel"
@@ -275,7 +281,8 @@ class ScaleVariablePlanBouquet:
         epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
         return max(  ( self.SubOpt(act_sel,-1,scale,bouquet=True) / self.WorstSubOpt(act_sel,scale) ) for act_sel in epp_iterator  ) - 1
 
-    ######## PERFORMANCE METRICS ENDS ########
+
+    ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
 
     def save_dict(self, dict_obj, file_name):
 		"Serialize data into file"
@@ -312,11 +319,14 @@ class ScaleVariablePlanBouquet:
         self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(len_dir)) )
         return len_dir
 
+
+    ######## BOUQUET EXECUTION METHODS ########
+
     def base_gen(self):
         "Step 0: Find cost values for each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
         sel_min, sel_max = (sel_range[0],)*len(self.epp), (sel_range[-1],)*len(self.epp)
-
+        # Getting plans at extremas, storing them and serializing them
         plan_min_xml, plan_max_xml = self.get_plan(sel_min, scale), self.get_plan(sel_max, scale)
         plan_min, plan_max = self.store_plan(plan_min_xml), self.store_plan(plan_max_xml)
         plan_min_serial, plan_max_serial = self.plan_serial(plan_min_xml), self.plan_serial(plan_max_xml)
@@ -328,16 +338,16 @@ class ScaleVariablePlanBouquet:
         self.sd2p_m[(sel_min,scale)], self.sd2p_m[(sel_max,scale)] = plan_min, plan_max
         self.C_min, self.C_max = self.cost(sel_min, plan_min, scale), self.cost(sel_max, plan_max, scale)
         self.spd2c_m[(sel_min,plan_min,scale)], self.spd2c_m[(sel_max,plan_max,scale)] = self.C_min, self.C_max
-        self.IC_count = int( np.floor(  np.log(self.C_max/self.C_min) / np.log(r_ratio)  )+1 )
         # Maps for Iso-cost surfaces, indexed from 0 as opposite from paper convention
         # Also for now only last IC is known and have one optimal plan at it, we can create its entries
-        self.id2p_m[(self.IC_count-1,scale)] = [plan_max]
-        self.ipd2s_m[(0,plan_max,scale)] = [sel_max]
-        self.pd2i_m[(plan_max,scale)] = self.IC_count-1
+        self.IC_count = int( np.floor(  np.log(self.C_max/self.C_min) / np.log(r_ratio)  )+1 )
 		for ix in range(self.IC_count):
-	        self.id2c_m[(ix,scale)] = self.C_max*( (1/r_ratio) ** ( self.IC_count-(ix+1) ) )
-        self.anorexic_m[(0.0,plan_min)], self.anorexic_m[(0.0,plan_max)] = plan_min, plan_max
-        pass
+	        self.id2c_m[(ix,scale)] = self.C_max / (r_ratio**(self.IC_count-(ix+1)))
+	    self.anorexic_m[(0.0,plan_min)], self.anorexic_m[(0.0,plan_max)] = plan_min, plan_max
+	    # Below steps are to be done using NEXUS for other than last contours
+        self.id2p_m[(self.IC_count-1,scale)] = [plan_max]
+        self.ipd2s_m[(self.IC_count-1,plan_max,scale)] = [sel_max]
+        self.pd2i_m[(plan_max,scale)] = self.IC_count-1
 
     def nexus(self):
         "Step 1: Find Plans on each Iso-cost surface"
@@ -381,8 +391,9 @@ class ScaleVariablePlanBouquet:
 
 
 
-######## PLAN BOUQUET ENDS ########
 
+
+'######## MAIN EXECUTION ########'
 
 if __name__=='__main2__':
 
@@ -409,7 +420,6 @@ if __name__=='__main2__':
     for query_name in os.listdir( os.path.join(master_dir,benchmark,'sql') ):
         query_id = query_name.split('.')[0].strip()
         obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,db_scales,stderr) )
-
 
     with multiprocessing.Pool(processes=CPU) as pool:
         for i in pool.imap_unordered(run,obj_ls):
