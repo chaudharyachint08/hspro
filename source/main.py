@@ -349,8 +349,22 @@ class ScaleVariablePlanBouquet:
         self.ipd2s_m[(self.IC_count-1,plan_max,scale)] = [sel_max]
         self.pd2i_m[(plan_max,scale)] = self.IC_count-1
 
+    def nexus_2d():
+    	pass
+
+    def nexus_helper():
+    	pass
     def nexus(self):
         "Step 1: Find Plans on each Iso-cost surface"
+        '''
+        # Locating Initial Seed, Binary Search based edges selection
+        Location L(x, y) is included in the contour C if it satisfies the following conditions:
+			(a) C ≤ C_opt[L] ≤ (1 + α)C and
+			(b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
+		# Neighborhood EXploration Using Seed (NEXUS)
+		If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
+		The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
+        '''
         pass
 
     def anorexic_reduction(self):
@@ -371,8 +385,12 @@ class ScaleVariablePlanBouquet:
         "Step 3: Find Plans on each Iso-cost surface"
         pass
 
-    def simulate(self):
+    def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
+        scale = scale if (scale is not None) else self.base_scale
+        '''
+        Anorexic reduction based execution, with options for both randomization and covering sequence
+        '''
         pass
 
     def run(self):
