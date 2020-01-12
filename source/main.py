@@ -350,6 +350,7 @@ class ScaleVariablePlanBouquet:
         self.pd2i_m[(plan_max,scale)] = self.IC_count-1
 
     def nexus_2d():
+    	"2 dimensional"
     	pass
 
     def nexus_helper():
