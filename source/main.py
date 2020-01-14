@@ -63,6 +63,12 @@ for i in ls:
 
 from datetime import datetime
 warnings.filterwarnings("ignore")
+
+# Importing DBMS libraries, and custom made libraries
+import psycopg2
+import plan_format as pf
+
+
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 
 # Importing Standard Data Science & Deep Learning Libraries
@@ -74,10 +80,6 @@ for i in ls:
         i = (i,)
     exec('import {0} as {1}'.format(i[0],i[-1]))
     exec('print("Version of {0}",{1}.__version__)'.format(i[0],i[-1]))
-
-# Importing DBMS libraries, and custom made libraries
-import psycopg2
-import plan_format as pf
 
 ######## STANDARD & THIRD PARTY LIBRARIES IMPORTS ENDS ########
 
