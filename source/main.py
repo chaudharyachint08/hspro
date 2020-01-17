@@ -374,19 +374,66 @@ class ScaleVariablePlanBouquet:
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
         pass
 
-    def cover(self,sel_1, sel_2):
-        "Check if one region covers other"
+
+
+    def product_cover(self, sel_1, sel_2, dual=False):
+        "Check if either of points in ESS covers each other, +ve if in ascending order"
         ls_1, ls_2 = np.array(sel_1), np.array(sel_2)
         if   (ls_1 <= ls_2).all(): # ls_1 is covered by ls_2
             return 1
-        elif (ls_1 >= ls_2).all(): # ls_1 covers ls_2
+        elif dual and (ls_1 >= ls_2).all(): # ls_1 covers ls_2
             return -1
         else:
             return 0
 
+    def region_cover(self, points_1, points_2, dual=False):
+    	"Checks if two execution's points given, will cover each other, +ve if in ascending order"
+    	grid_1, grid_2 = np.array(points_1), np.array(points_2)
+    	min_1, min_2, max_1, max_2 = grid_1.min(axis=0), grid_2.min(axis=0), grid_1.max(axis=0), grid_2.min(axis=0)
+    	# Check 1 : Computationally easy
+    	if self.product_cover(max_1, min_2):
+    		return 1
+    	if dual and self.product_cover(max_2, min_1):
+    		return -1
+    	# Check 2 : Computationally easy
+    	if not self.product_cover(max_1, max_2):
+    		return 0
+    	# Check 3 : Computationally expensive
+    	# There must exist a point in points_2 for each point in points_1, that cover, which makes point_2 a cover of points_1
+    	for point_1 in grid_1:
+    		if not (point_1 <= grid_2).all(axis=1).any():
+    			break
+    	else:
+    		return 1
+    	if dual:
+	    	for point_2 in grid_2:
+	    		if not (point_2 <= grid_2).all(axis=1).any():
+	    			break
+	    	else:
+	    		return -1
+    	return 0
+
+    def build_hasse(self):
+    	"To build Hasse diagram for CSI algorithm to work"
+    	'''
+    	Pruning cover relation determination in all pairs of BS. Few inference test:
+    	    1. If both on same contour, reject as cover cannot exist
+    	    2. If one of element is E_terminal, it will cover other element
+    	    3. If execution lies more than contour apart, explicit check only if transitive is non-existent
+    	'''
+    	pass
+
+
     def covering_sequence(self):
         "Step 3: Find Plans on each Iso-cost surface"
+        '''
+        Generate hasse diagram of execution covering
+        Boolean Data structure & execution maintenance for CSI algorithm
+        '''
         pass
+
+
+
 
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
