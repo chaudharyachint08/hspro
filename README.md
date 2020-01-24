@@ -17,6 +17,9 @@ Shuffle of plans on each contour into list
 #### PERFORMANCE METRICS ####
 Below maps to be added for plan choice decision making
 (Scale -> POSP)
+For MSO or Any-performance metric, RED**|ESS| points would be needed
+Plan_Bouquet compilation can be done at higher resolution
+While MSO & Other peformance metrics should be done on lower dimesions, as exponential bombing of number of points to be evaluated
 
 #### SIMULATION ####
 Boolean Zagged array for only once execution during simulation

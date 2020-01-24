@@ -83,7 +83,10 @@ for i in ls:
     if not isinstance(i,tuple):
         i = (i,)
     exec('import {0} as {1}'.format(i[0],i[-1]))
-    exec('print("Version of {0}",{1}.__version__)'.format(i[0],i[-1]))
+    try:
+        exec('print("Version of {0}",{1}.__version__)'.format(i[0],i[-1]))
+    except:
+        pass
 
 ######## STANDARD & THIRD PARTY LIBRARIES IMPORTS ENDS ########
 
@@ -100,8 +103,8 @@ parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) 
 parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
 # Int Type Arguments
 parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
-parser.add_argument("--resolution" , type=eval , dest='resolution' , default=100)
 parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
+parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
 parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
 parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None)
 # Float Type Arguments
@@ -116,6 +119,8 @@ parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='
 parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
 parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
 # Tuple Type Arguments
+parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(1000,300,100,50,30) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
+parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,300,100,50,30) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
 parser.add_argument("--db_scales" , type=eval , dest='db_scales' , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
 
 args, unknown = parser.parse_known_args()
@@ -140,28 +145,54 @@ else:
         plots_ls.remove('..')
     except:
         pass
-    master_dir = os.path.join(master_ls)    
-    plots_dir  = os.path.join(plots_ls)
+    master_dir = os.path.join(*master_ls)
+    plots_dir  = os.path.join(*plots_ls)
 # creating a lock for os_operations
-os_lock = threading.Lock()
+# os_lock = threading.Lock()
+os_lock = multiprocessing.Lock()
 # eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
 
 ######## GLOBAL DATA-STRUCTURES ENDS ########
 
 ######## GLOBAL FUNCTIONS BEGINS ########
 
+def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
+    os_lock.acquire()
+    print( *args, sep=sep, end=end, file=file, flush=flush)
+    os_lock.release()
+
+
 def my_listdir(dir_path='.'):
     "Synchronization construct based listing of files in directory"
+    # print(os_lock.__dict__['_semlock']._count())
     os_lock.acquire()
-    file_ls = os.listdir(dir_path)
-    os_lock.release()
+    try:
+        file_ls = os.listdir(dir_path)
+    except Exception as e:
+        error = True
+        error_msg = str(e)
+    else:
+        error = False
+    finally:
+        os_lock.release()
+    if error:
+        raise FileNotFoundError(error_msg)
     return file_ls
 
 def my_open(file_path,mode='r'):
     "Synchronization construct based opening of a file"
     os_lock.acquire()
-    file_handle = my_open(file_path,mode)
-    os_lock.release()
+    try:
+        file_handle = open(file_path,mode)
+    except Exception as e:
+        error = True
+        error_msg = str(e)
+    else:
+        error = False
+    finally:
+        os_lock.release()
+    if error:
+        raise FileNotFoundError(error_msg)
     return file_handle
 
 def run(object):
@@ -190,11 +221,11 @@ class ScaleVariablePlanBouquet:
             self.bouquet_runnable = False
         else:
             self.bouquet_runnable = True if len(self.epp) else False
-
+        self.exec_specific = {}
         self.exec_specific['random_p_d'] = random_p_d
         self.anorexic_lambda = anorexic_lambda if anorexic else 0.0
         'Naming conventions for maps'
-        # [a,c,d,f,i,p,r,s] are [anorexic_lambda, cost, base_scale, file_name(without_extension), IC_id, plan_id, representation_plan(serial string), selectivity]
+        # [a,c,d,e,f,i,o,p,r,s] are [anorexic_lambda, cost, base_scale, execution(IC_id,plan_id),file_name(without_extension), IC_id, POSP set,plan_id, representation_plan(serial string), selectivity]
         # Below 3 have cyclic, and any of them can be used to derive any other, using either one or two maps
         self.r2f_m = {} # (plan_string)     : file_name(without extension)
         self.f2p_m = {} # (file_name)       : plan_id
@@ -208,6 +239,9 @@ class ScaleVariablePlanBouquet:
         # Below map will need exponential space, will be used to send to Anorexic reduction, with diff-IC contour synchronization
         self.ipd2s_m = {} # (IC_id, plan, scale)   : set of selectivity values of each plan on IC surface
         # If anorexic_reduction is disabled, anorexic_lambda is 0.0 and reduction is not called
+        self.d2o_m = {} # (scale, POSP_set) to identify Paramteric optimal set of plans at some specific scale
+        self.e2e_c = {} # (IC_id, plan_id) useful for CSI Algorithms storage, checking if that execution has already occured in lower IC-contours
+
 
     ######## DATA-BASE CONNECTION METHODS ########
     
@@ -224,9 +258,9 @@ class ScaleVariablePlanBouquet:
                 epp_list = ' and '.join(str(x) for x in self.epp)
                 sel_list = ' , '.join(str(x) for x in sel)
                 cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
-                res = cursor.fetchone()[0]
+                result = cursor.fetchone()[0]
             except (Exception, psycopg2.DatabaseError) as error : # MultiThreaded Logging of Exception
-                print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
+                my_print("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
                 break_flag = False
             else:
                 break_flag = True
@@ -236,10 +270,10 @@ class ScaleVariablePlanBouquet:
                     connection.close()
                 if break_flag:
                     break
-        return res
+        return result
 
-    def get_cost(self, sel, plan='', scale=base_scale):
-        "FPC of plan at some other selectivity value"
+    def get_cost_and_plan(self, sel, plan='', scale=base_scale):
+        "FPC of plan at some other selectivity value if plan is suplied, else cost and plan at supplied selectivity"
         while True:
             try:
                 connection = psycopg2.connect(user = "sa",
@@ -255,13 +289,13 @@ class ScaleVariablePlanBouquet:
                     cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
                 else:
                     cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
-                res = cursor.fetchone()[0]
+                result = cursor.fetchone()[0]
             except (Exception, psycopg2.DatabaseError) as error : # MultiThreaded Logging of Exception
-                print ("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
+                my_print("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
                 break_flag = False
             else:
-                json_obj = pf.xml2json(res,mode='string')
-                res = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
+                json_obj = pf.xml2json(result,mode='string')
+                result = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
                 break_flag = True
             finally:
                 if connection:
@@ -269,7 +303,7 @@ class ScaleVariablePlanBouquet:
                     connection.close()
                 if break_flag:
                     break
-        return res
+        return result
 
 
     ######## PERFORMANCE METRICS METHODS ########
@@ -278,8 +312,10 @@ class ScaleVariablePlanBouquet:
         "Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan, scale) not in self.spd2c_m:
-            self.spd2c_m[ (sel, plan, scale) ] = self.get_cost(sel, plan, scale)
-        return self.spd2c_m[ (sel, plan, scale) ]
+            cost_val = self.get_cost(sel, plan, scale)
+            # Exponential Storage of |POSP|*RED**dim(EPP)
+            # self.spd2c_m[ (sel, plan, scale) ] = cost_val
+        return cost_val
     def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
         "Ratio of plan on estimated sel to plan on actual sel"
         scale = scale if (scale is not None) else self.base_scale
@@ -297,7 +333,7 @@ class ScaleVariablePlanBouquet:
     def WorstSubOpt(self, act_sel, scale=None):
         "SubOpt for all possible est_selectivities"
         scale = scale if (scale is not None) else self.base_scale
-        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
+        epp_iterator = itertools.product(*([sel_range_o[len(self.epp)],]*len(self.epp)))
         return max( self.SubOpt(act_sel, est_sel, scale, bouquet=False) for est_sel in epp_iterator )
     def MaxSubOpt(self, scale=None, bouquet=False):
         "Global worst case"
@@ -331,7 +367,7 @@ class ScaleVariablePlanBouquet:
         return 'PLAN_STRING_REPRESENTATION'
     def plan_serial(self,xml_plan_string):
         "parsing function to convert plan object (XML/JSON) in to a string"
-        json_obj = pf.xml2json(res,mode='string')
+        json_obj = pf.xml2json(result, mode='string')
         plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
         return plan_string
 
@@ -340,13 +376,13 @@ class ScaleVariablePlanBouquet:
         sep = os.path.sep
         # Writing XML plan into suitable plan directory & file name conventions
         xml_plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','xml', self.query_id)
-        if not is os.path.dir(xml_plan_path):
+        if not os.path.isdir(xml_plan_path):
             os.makedirs(xml_plan_path)
         with my_open( os.path.join(xml_plan_path,'{}.xml'.format(len(my_listdir(xml_plan_path)))) ,'w') as f:
             f.write( xml_string )
         # Writing JSON plan into suitable plan directory & file name conventions
         json_plan_path = os.path.join( *pwd.split(sep)[:-1],master_dir.split(sep)[-1],self.benchmark,'plans','json', self.query_id)
-        if not is os.path.dir(json_plan_path):
+        if not os.path.isdir(json_plan_path):
             os.makedirs(json_plan_path)
         json_obj = pf.xml2json(xml_string,mode='string')
         len_dir = len(my_listdir(json_plan_path))
@@ -358,7 +394,7 @@ class ScaleVariablePlanBouquet:
     def save_dict(self, dict_obj, file_name):
         "Serialize data into file"
         json.dump( dict_obj, my_open(file_name,'w') )
-    def load_dict(self, file_name)
+    def load_dict(self, file_name):
         "Read data from file"
         return json.load( my_open(file_name) )
     def save_maps(self):
@@ -369,37 +405,45 @@ class ScaleVariablePlanBouquet:
         self.save_dict( self.r2f_m         , os.path.join( self.maps_dir,'r2f_m'   ) )
         self.save_dict( self.f2p_m         , os.path.join( self.maps_dir,'f2p_m'   ) )
         self.save_dict( self.p2r_m         , os.path.join( self.maps_dir,'p2r_m'   ) )
-        self.save_dict( self.sd2p_m        , os.path.join( self.maps_dir,'sd2p_m'  ) )
+        self.save_dict( self.spd2c_m       , os.path.join( self.maps_dir,'sd2p_m'  ) )
         self.save_dict( self.spd2c_m       , os.path.join( self.maps_dir,'spd2c_m' ) )
         self.save_dict( self.iad2p_m       , os.path.join( self.maps_dir,'iad2p_m' ) )
         self.save_dict( self.id2c_m        , os.path.join( self.maps_dir,'id2c_m'  ) )
         self.save_dict( self.ipd2s_m       , os.path.join( self.maps_dir,'ipd2s_m' ) )
+        self.save_dict( self.d2o_m         , os.path.join( self.maps_dir,'d2o_m'   ) )
+        self.save_dict( self.e2e_m         , os.path.join( self.maps_dir,'e2e_m'   ) )
 
     def reindex(self, old_random_p_d, new_random_p_d):
-    	"Fucntion for changing Indexes for Iso-cost contours, after different loading"
+        "Fucntion for changing Indexes for Iso-cost contours, after different loading"
         incr_ratio = (new_random_p_d//old_random_p_d)
         remap = { x:((x+1)*incr_ratio-1) for x in range(old_random_p_d*self.IC_count) }
 
-    def remap(self, old_map, reindex_m, re_ix=0):
+    def remap(self, old_map, reindex_m, re_ix=0, both_side=False):
         "Changing map keys, for re-indexing of Iso-cost contours"
         new_map = {}
-        tuple_mode = True if type(list(old_map.keys())[0])==tuple else False
+        tuple_mode_k = True if type(list(old_map.keys())[0])==tuple else False
         for key in old_map:
-            new_map[ ((*key[:re_ix],reindex_m[key],*key[re_ix+1:]) if tuple_mode else reindex_m[key]) ] = old_map[key]
+            if not both_side:
+                old_val = old_map[key]
+            else: # This section work upto value in old_map in single level iterable, useful for e2e_m reindexing
+                tuple_mode_v = True if type(list(old_map.values())[0])==tuple else False
+                old_val = ((*old_map[key][:re_ix],reindex_m[old_map[key]],*old_map[key][re_ix+1:]) if tuple_mode_v else reindex_m[old_map[key]])
+            new_map[ ((*key[:re_ix],reindex_m[key],*key[re_ix+1:]) if tuple_mode_k else reindex_m[key]) ] = old_val
         return new_map
 
     def load_maps(self):
         "Loads previous maps values into objects for repeatable execution over difference simulation"
         if os.path.isdir(self.maps_dir):
-            self.load_dict( self.r2f_m         , os.path.join( self.maps_dir,'r2f_m'   ) )
-            self.load_dict( self.f2p_m         , os.path.join( self.maps_dir,'f2p_m'   ) )
-            self.load_dict( self.p2r_m         , os.path.join( self.maps_dir,'p2r_m'   ) )
-            self.load_dict( self.sd2p_m        , os.path.join( self.maps_dir,'sd2p_m'  ) )
-            self.load_dict( self.spd2c_m       , os.path.join( self.maps_dir,'spd2c_m' ) )
-
-            self.load_dict( self.iad2p_m       , os.path.join( self.maps_dir,'iad2p_m' ) )
-            self.load_dict( self.id2c_m        , os.path.join( self.maps_dir,'id2c_m'  ) )
-            self.load_dict( self.ipd2s_m       , os.path.join( self.maps_dir,'ipd2s_m' ) )
+            self.r2f_m   = self.load_dict( os.path.join( self.maps_dir,'r2f_m'   ) )
+            self.f2p_m   = self.load_dict( os.path.join( self.maps_dir,'f2p_m'   ) )
+            self.p2r_m   = self.load_dict( os.path.join( self.maps_dir,'p2r_m'   ) )
+            self.sd2p_m  = self.load_dict( os.path.join( self.maps_dir,'sd2p_m'  ) )
+            self.spd2c_m = self.load_dict( os.path.join( self.maps_dir,'spd2c_m' ) )
+            self.iad2p_m = self.load_dict( os.path.join( self.maps_dir,'iad2p_m' ) )
+            self.id2c_m  = self.load_dict( os.path.join( self.maps_dir,'id2c_m'  ) )
+            self.ipd2s_m = self.load_dict( os.path.join( self.maps_dir,'ipd2s_m' ) )
+            self.d2o_m   = self.load_dict( os.path.join( self.maps_dir,'d2o_m'   ) )
+            self.e2e_m   = self.load_dict( os.path.join( self.maps_dir,'e2e_m'   ) )
 
             exec_specific = self.load_dict( os.path.join( self.maps_dir,'exec_specific' ) )
             if self.exec_specific['random_p_d'] != exec_specific['random_p_d']:
@@ -408,6 +452,7 @@ class ScaleVariablePlanBouquet:
                 iad2p_m, id2c_m, ipd2s_m = self.iad2p_m, self.id2c_m, self.ipd2s_m
                 reindex_m = self.reindex(self, old_val, new_val)
                 self.iad2p_m, self.id2c_m, self.ipd2s_m = self.remap(self.iad2p_m,reindex_m,0), self.remap(self.id2c_m,reindex_m,0), self.remap(self.ipd2s_m,reindex_m,0)
+                self.e2e_m = self.remap(self.e2e_m,reindex_m,0,both_side=True)
                 self.exec_specific['random_p_d'] = new_val
 
     ######## BOUQUET EXECUTION METHODS ########
@@ -459,11 +504,37 @@ class ScaleVariablePlanBouquet:
             self.anorexic_reduction()
 
 
-    def anorexic_reduction(self):
+        # self.r2f_m   = self.load_dict( os.path.join( self.maps_dir,'r2f_m'   ) )
+        # self.f2p_m   = self.load_dict( os.path.join( self.maps_dir,'f2p_m'   ) )
+        # self.p2r_m   = self.load_dict( os.path.join( self.maps_dir,'p2r_m'   ) )
+        # self.sd2p_m  = self.load_dict( os.path.join( self.maps_dir,'sd2p_m'  ) )
+        # self.spd2c_m = self.load_dict( os.path.join( self.maps_dir,'spd2c_m' ) )
+        # self.iad2p_m = self.load_dict( os.path.join( self.maps_dir,'iad2p_m' ) )
+        # self.id2c_m  = self.load_dict( os.path.join( self.maps_dir,'id2c_m'  ) )
+        # self.ipd2s_m = self.load_dict( os.path.join( self.maps_dir,'ipd2s_m' ) )
+        # self.d2o_m   = self.load_dict( os.path.join( self.maps_dir,'d2o_m'   ) )
+        # self.e2e_m   = self.load_dict( os.path.join( self.maps_dir,'e2e_m'   ) )
+
+
+    def anorexic_reduction(self, plan_dict):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
-        pass
+        contour_points = set().union( *(plan_dict[plan_id] for plan_id in plan_dict) )
+        eating_capacity = {}
+        for plan_id in plan_dict:
+            non_optimal_points = contour_points - plan_dict[plan_id]
+            
+            lambda_optimal_points = set() # CHECKPOINT : FPC Calls for evaluation into non-optiumal region
 
-
+            eating_capacity[plan_id] = lambda_optimal_points
+        reduced_plat_set = set()
+        while contour_points:
+            max_eating_plan = max( eating_capacity, key=lambda plan_id:len(eating_capacity[plan_id]) )
+            reduced_plat_set.add( max_eating_plan )
+            points_gone = set().union( *(plan_dict[max_eating_plan], eating_capacity[max_eating_plan]) )
+            contour_points.difference_update( points_gone )
+            for key in eating_capacity:
+                eating_capacity.difference_update( points_gone )
+        return reduced_plat_set
 
     def product_cover(self, sel_1, sel_2, dual=False):
         "Check if either of points in ESS covers each other, +ve if in ascending order"
@@ -534,9 +605,6 @@ class ScaleVariablePlanBouquet:
             self.load_maps()
             self.base_gen()
             self.nexus()
-            else: # Identity mapping if Anorexic_reduction is switched off
-                for plan in self.p2r_m:
-                    self.anorexic_m[ (plan) ] = plan
             if covering:
                 self.covering_sequence()
             # exec_list = self.simulate(act_sel, scale) # This function is indeed called from metrices, and call be later from anywhere to get list of execution
@@ -548,30 +616,36 @@ class ScaleVariablePlanBouquet:
 
 '######## MAIN EXECUTION ########'
 
-if __name__=='__main2__':
+if __name__=='__main__':
 
-    # Creating values of selectivities on each axis to be varied
-    if progression=='GP':
-        if zero_sel:
-            resolution -= 1
-        sel_ratio = np.exp( np.log(max_sel/min_sel) / (resolution-1) )
-        sel_range = [(min_sel*sel_ratio**i) for i in range(resolution)]
-        if zero_sel:
-            sel_range.insert( 0, 0 )
-    else:
-        sel_diff = max_sel / (resolution-1)
-        sel_range = [ i*sel_diff for i in range(resolution)]
-    sel_range = np.array( sel_range )
-    if sel_round is not None:
-        sel_range = np.round( sel_range, sel_round )
+    # Creating values of selectivities on each axis to be varied (keyed(indexed) from 1, as Dimensions can't start from 0)
+    sel_range_o, sel_range_p = {}, {}
+    for ix in range(max(len(resolution_o),len(resolution_p))):
+        res_o, res_p = resolution_o[ix], resolution_p[ix]
+        if progression=='GP':
+            if zero_sel:
+                res_o, res_p = res_o-1, res_p-1
+            sel_ratio_o , sel_ratio_p = np.exp( np.log(max_sel/min_sel) / (res_o-1) )    , np.exp( np.log(max_sel/min_sel) / (res_p-1) )
+            sel_ls_o    , sel_ls_p    = [(min_sel*sel_ratio_o**i) for i in range(res_o)] , [(min_sel*sel_ratio_o**i) for i in range(res_o)]
+            if zero_sel:
+                sel_ls_o.insert( 0, 0.0 )
+                sel_ls_p.insert( 0, 0.0 )
+        else:
+            sel_diff_o  , sel_diff_p = (max_sel-min_sel) / (res_o-1) , (max_sel-min_sel) / (res_p-1)
+            sel_ls_o    , sel_ls_p   = [ min_sel+i*sel_diff_o for i in range(res_o)] , [ min_sel+i*sel_diff_p for i in range(res_p)]
+
+        sel_ls_o , sel_ls_p = np.array( sel_ls_o ) , np.array( sel_ls_p )
+        if sel_round is not None:
+            sel_ls_o , sel_ls_p = np.round( sel_ls_o, sel_round ) , np.round( sel_ls_p, sel_round )
+        sel_range_o[ix+1], sel_range_p[ix+1] = sel_ls_o , sel_ls_p
 
     obj_ls, stderr = [], my_open(os.path.join(master_dir,'stderr.txt'),'w')
     for query_name in my_listdir( os.path.join(master_dir,benchmark,'sql') ):
         query_id = query_name.split('.')[0].strip()
         obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,db_scales,stderr) )
 
-    with multiprocessing.Pool(processes=CPU) as pool:
-        for i in pool.imap_unordered(run,obj_ls):
-            continue
+    # with multiprocessing.Pool(processes=CPU) as pool:
+    #     for i in pool.imap_unordered(run,obj_ls):
+    #         continue
 
     stderr.close()
