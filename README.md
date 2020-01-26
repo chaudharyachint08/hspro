@@ -5,14 +5,22 @@
 <pre>
 #### ANOREXIC REDUCTION ####
 Anorexic Reduction not as mapping, a plan-optimal regions can be jointly swallowed by two plans
-cost threshold of IC-contour is shifted by (1+Anorexic_Lambda)*cost[IC_id]
+Seperate cost threshold for each execution, as anorexic reduction might have happended or not.
+Cost value of contour not always shifted by (1+Anorexic_Lambda)*cost[IC_id]
+
+
+#### COVERING SEQUENCE IDENTIFICATION ####
+CSI is just mapping from one execution to another which is cover of what of keyed execution
+On Demand CSI invocation if Randomization 2 is deployed, for which is random_p_d CSI are there, into joint mapping
+During CSI cost thresholds
+
 
 #### Randomization 2 ####
 Different CSI Invocation will be needed, each with m+1 for others, & m IC-contours for no-left shift placement of contours
 each will be on-demand execution with saving of cover into maps of form (Execution -> Execution)
 
 #### Randomization 1 ####
-Shuffle of plans on each contour into list
+Shuffle of executions on each contour
 
 #### PERFORMANCE METRICS ####
 Below maps to be added for plan choice decision making

@@ -12,19 +12,23 @@ hspro (Home Directory of Project) # CHECKPOINT, next directory should be r_ratio
 .
 ├── bouquet_master
 │   ├── tpcds
-│   │   ├── maps
+│   │   ├── maps    # Store Maps, which will be further used to avoid re-computation & aid Repeated execution
 │   │   │   ├── 1
 │   │   │   ├── 2
 │   │   │   └── 3
-│   │   ├── sql
+│   │   ├── plots   # Store plots of contours, MSO, ASO or anything relevant neeeded to be visualized
+│   │   │   ├── 1
+│   │   │   ├── 2
+│   │   │   └── 3
+│   │   ├── sql     # Store SQL Queries on which experiments are need to be done
 │   │   │   ├── 1.sql
 │   │   │   ├── 2.sql
 │   │   │   └── 3.sql
-│   │   ├── epp
+│   │   ├── epp     # Store EPPs of corresponding SQL Queries
 │   │   │   ├── 1.epp
 │   │   │   ├── 2.epp
 │   │   │   └── 3.epp
-│   │   └── plans
+│   │   └── plans   # Store PLANs in both JSON & XML format for SQL Queries
 │   │       ├── json
 │   │       │   ├── 1
 │   │       │   │   ├── 1.json
@@ -48,12 +52,17 @@ hspro (Home Directory of Project) # CHECKPOINT, next directory should be r_ratio
 │   └── tpch
 │       │
 │       *
-├── bouquet_plots
-│   │
-│   *
 └── source
     ├── main.py
     └── plan_format.py
+
+
+
+
+├── bouquet_plots
+│   │
+│   *
+
 '''
 
 
@@ -95,10 +104,10 @@ for i in ls:
 
 parser = argparse.ArgumentParser()
 # Bool Type Arguments
-parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False)
+parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
 parser.add_argument("--new_plan" , type=eval , dest='new_plan' , default=False)
-parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False)
-parser.add_argument("--covering" , type=eval , dest='covering' , default=False)
+parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
+parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
 parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
 parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
 # Int Type Arguments
@@ -106,13 +115,13 @@ parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
 parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
 parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
 parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
-parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None)
+parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None) # If have to round of selectivity values during computation
 # Float Type Arguments
-parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0) # IC cost ratio for bouquet
-parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1
-parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0) # Maximum sel of 1
-parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack
-parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # fir q-points in discretized planes
+parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
+parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1.0
+parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0)    # Maximum sel of 1.0
+parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
+parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # for q-points in discretized planes, results in surface thickening
 # String Type Arguments
 parser.add_argument("--progression" , type=str  , dest='progression' , default='AP')
 parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
@@ -160,7 +169,6 @@ def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
     os_lock.acquire()
     print( *args, sep=sep, end=end, file=file, flush=flush)
     os_lock.release()
-
 
 def my_listdir(dir_path='.'):
     "Synchronization construct based listing of files in directory"
@@ -245,35 +253,8 @@ class ScaleVariablePlanBouquet:
 
     ######## DATA-BASE CONNECTION METHODS ########
     
-    def get_plan(self, sel, scale=base_scale):
-        "finding optimal plan at some seletivity value"
-        while True:
-            try:
-                connection = psycopg2.connect(user = "sa",
-                                              password = "database",
-                                              host = "127.0.0.1",
-                                              port = "5432",
-                                              database = "{}-{}".format(self.benchmark,scale))
-                cursor = connection.cursor()
-                epp_list = ' and '.join(str(x) for x in self.epp)
-                sel_list = ' , '.join(str(x) for x in sel)
-                cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
-                result = cursor.fetchone()[0]
-            except (Exception, psycopg2.DatabaseError) as error : # MultiThreaded Logging of Exception
-                my_print("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
-                break_flag = False
-            else:
-                break_flag = True
-            finally:
-                if connection:
-                    cursor.close()
-                    connection.close()
-                if break_flag:
-                    break
-        return result
-
     def get_cost_and_plan(self, sel, plan='', scale=base_scale):
-        "FPC of plan at some other selectivity value if plan is suplied, else cost and plan at supplied selectivity"
+        "FPC of plan at some other selectivity value if plan is suplied, else optimal plan and its cost at supplied selectivity"
         while True:
             try:
                 connection = psycopg2.connect(user = "sa",
@@ -289,13 +270,13 @@ class ScaleVariablePlanBouquet:
                     cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
                 else:
                     cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
-                result = cursor.fetchone()[0]
+                result_plan = cursor.fetchone()[0]
             except (Exception, psycopg2.DatabaseError) as error : # MultiThreaded Logging of Exception
                 my_print("Error while connecting to PostgreSQL", error,file=self.stderr,flush=True)
                 break_flag = False
             else:
-                json_obj = pf.xml2json(result,mode='string')
-                result = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
+                json_obj = pf.xml2json(result_plan,mode='string')
+                result_cost = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
                 break_flag = True
             finally:
                 if connection:
@@ -303,7 +284,7 @@ class ScaleVariablePlanBouquet:
                     connection.close()
                 if break_flag:
                     break
-        return result
+        return (result_cost, result_plan)
 
 
     ######## PERFORMANCE METRICS METHODS ########
@@ -627,13 +608,13 @@ if __name__=='__main__':
                 res_o, res_p = res_o-1, res_p-1
             sel_ratio_o , sel_ratio_p = np.exp( np.log(max_sel/min_sel) / (res_o-1) )    , np.exp( np.log(max_sel/min_sel) / (res_p-1) )
             sel_ls_o    , sel_ls_p    = [(min_sel*sel_ratio_o**i) for i in range(res_o)] , [(min_sel*sel_ratio_o**i) for i in range(res_o)]
-            if zero_sel:
-                sel_ls_o.insert( 0, 0.0 )
-                sel_ls_p.insert( 0, 0.0 )
         else:
             sel_diff_o  , sel_diff_p = (max_sel-min_sel) / (res_o-1) , (max_sel-min_sel) / (res_p-1)
             sel_ls_o    , sel_ls_p   = [ min_sel+i*sel_diff_o for i in range(res_o)] , [ min_sel+i*sel_diff_p for i in range(res_p)]
 
+        if zero_sel:
+            sel_ls_o.insert( 0, 0.0 )
+            sel_ls_p.insert( 0, 0.0 )
         sel_ls_o , sel_ls_p = np.array( sel_ls_o ) , np.array( sel_ls_p )
         if sel_round is not None:
             sel_ls_o , sel_ls_p = np.round( sel_ls_o, sel_round ) , np.round( sel_ls_p, sel_round )
