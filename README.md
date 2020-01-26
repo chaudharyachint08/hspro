@@ -12,7 +12,11 @@ Cost value of contour not always shifted by (1+Anorexic_Lambda)*cost[IC_id]
 #### COVERING SEQUENCE IDENTIFICATION ####
 CSI is just mapping from one execution to another which is cover of what of keyed execution
 On Demand CSI invocation if Randomization 2 is deployed, for which is random_p_d CSI are there, into joint mapping
-During CSI cost thresholds
+Indexing of 
+
+Ideally, during CSI, cost thresholds are different for each execution, in practice they should be used
+Other easier option is to use contour threshold, but will create an issue,
+If different shift of cost value in each contour due to different anorexic reduction
 
 
 #### Randomization 2 ####
