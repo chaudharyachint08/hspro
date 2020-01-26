@@ -482,7 +482,7 @@ class ScaleVariablePlanBouquet:
         pass
     def nexus_helper():
         pass
-    def nexus(self, IC_ix, scale=None):
+    def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
         '''
@@ -494,29 +494,51 @@ class ScaleVariablePlanBouquet:
         If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
         The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
         '''
-        pass
+
+
+        org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
+        for plan_id in org_plans: # Identity mapping for CSI & cost-multiplicity without ANOREXIC reduction
+            self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
         if self.anorexic_lambda:
-            self.anorexic_reduction()
+            self.anorexic_reduction(IC_id, scale=scale)
 
-    def anorexic_reduction(self, plan_dict):
+    def anorexic_reduction(self, IC_id, scale=None):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
-        contour_points = set().union( *(plan_dict[plan_id] for plan_id in plan_dict) )
+        scale = scale if (scale is not None) else self.base_scale
+        org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
+        # Identity mapping for CSI with ANOREXIC reduction
+        for plan_id in org_plans: 
+            self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
+        # Finding all points the are on present contour
+        contour_points = set().union( *(self.iapd2s_m[(IC_id,0.0,plan_id,scale)] for plan_id in org_plans) )
+        # Finding inital eating capacity with Anorexic reduction threshold (1+self.anorexic_lambda)
         eating_capacity = {}
-        for plan_id in plan_dict:
-            non_optimal_points = contour_points - plan_dict[plan_id]
-            
-            lambda_optimal_points = set() # CHECKPOINT : FPC Calls for evaluation into non-optiumal region
-
-            eating_capacity[plan_id] = lambda_optimal_points
-        reduced_plat_set = set()
+        for plan_id in org_plans:
+            non_optimal_points = contour_points - self.iapd2s_m[(IC_id,0.0,plan_id,scale)]
+            eating_capacity[plan_id] = {}
+            for sel in non_optimal_points:
+                cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
+                if cost_val <= self.id2c_m[IC_id]*(1+self.anorexic_lambda):
+                    eating_capacity[plan_id][sel] = cost_val
+        # Greedy Anorexic reduction algorithm as per Thesis of C.Rajmohan
+        reduced_plan_set = set()
         while contour_points:
-            max_eating_plan = max( eating_capacity, key=lambda plan_id:len(eating_capacity[plan_id]) )
-            reduced_plat_set.add( max_eating_plan )
-            points_gone = set().union( *(plan_dict[max_eating_plan], eating_capacity[max_eating_plan]) )
+            max_eating_plan_id = max( eating_capacity, key=lambda plan_id:len(eating_capacity[plan_id]) )
+            reduced_plan_set.add( max_eating_plan_id )
+            anorexic_max_cost = max( eating_capacity[max_eating_plan_id].values(), default=self.id2c_m[IC_id] )
+            self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)] = anorexic_max_cost / self.id2c_m[IC_id]
+            points_gone = set().union( *( self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)], eating_capacity[max_eating_plan].keys() ) )
             contour_points.difference_update( points_gone )
-            for key in eating_capacity:
-                eating_capacity.difference_update( points_gone )
-        return reduced_plat_set
+            for plan_id in eating_capacity:
+                for sel in points_gone:
+                    eating_capacity[plan_id].pop(sel,None)
+            if covering:
+                self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
+            else: # This should be made mandatory as CSI will use points under ANOREXIC covering, not optimal regions
+                del self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)]
+        self.iad2p_m[(IC_id, self.anorexic_lambda, scale)] = reduced_plan_set
+
+
 
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
@@ -674,9 +696,6 @@ class ScaleVariablePlanBouquet:
         Boolean Data structure & execution maintenance for CSI algorithm
         '''
         pass
-
-
-
 
 
 
