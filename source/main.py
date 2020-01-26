@@ -118,6 +118,7 @@ parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) 
 parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None) # If have to round of selectivity values during computation
 # Float Type Arguments
 parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
+parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
 parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1.0
 parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0)    # Maximum sel of 1.0
 parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
@@ -156,6 +157,8 @@ else:
         pass
     master_dir = os.path.join(*master_ls)
     plots_dir  = os.path.join(*plots_ls)
+if sep=='/':
+    home_dir = sep+home_dir
 # creating a lock for os_operations
 # os_lock = threading.Lock()
 os_lock = multiprocessing.Lock()
@@ -214,12 +217,12 @@ class ScaleVariablePlanBouquet:
     ""
     def __init__(self, benchmark, query_id, base_scale, exec_scale, db_scales, stderr):
         "Instance initializer: query_id is name of query file, which is same as ID of epp file also"
-        self.maps_dir = os.path.join(master_dir,self.benchmark,'maps','{}'.format(query_id))
         self.stderr, self.benchmark, self.query_id, self.base_scale, self.exec_scale, self.db_scales = stderr, benchmark, query_id, base_scale, exec_scale, db_scales
-        with my_open(os.path.join(*home_dir,*master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
+        self.maps_dir = os.path.join(master_dir,self.benchmark,'maps','{}'.format(self.query_id))
+        with my_open(os.path.join(home_dir,master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
         try:
-            with my_open(os.path.join(*home_dir,*master_dir,self.benchmark,'epp','{}.epp'.format(query_id))) as f:
+            with my_open(os.path.join(home_dir,master_dir,self.benchmark,'epp','{}.epp'.format(query_id))) as f:
                 self.epp = []
                 for line in f.readlines():
                     line = line.strip()
@@ -233,7 +236,7 @@ class ScaleVariablePlanBouquet:
         self.exec_specific['random_p_d'] = random_p_d
         self.anorexic_lambda = anorexic_lambda if anorexic else 0.0
         'Naming conventions for maps'
-        # [a,c,d,e,i,m,o,s] are [ anorexic_lambda, cost_val, database_scale, execution(IC_id,plan_id), IC_id, cost_multiplicity due to anorexic_red., POSP set, selectivity ]
+        # [a,c,d,e,i,m,o,s,t] are [ anorexic_lambda, cost_val, database_scale, execution(IC_id,plan_id), IC_id, cost_multiplicity due to anorexic_red., POSP set, selectivity, (number of occurence) ]
         # [f,p,r] are [ file_name(without_extension), plan_id, representation_plan(serial string) ]
         # Below 3 have cyclic, and any of them can be used to derive any other, using either one or two maps
         self.p2f_m = {} # (plan_id)        : file_name (without extension)
@@ -248,13 +251,14 @@ class ScaleVariablePlanBouquet:
         # Below map will need exponential space, will be used to send to Anorexic reduction, with diff-IC contour synchronization
         self.iapd2s_m = {} # (IC_id, anorexic_lambda, plan, scale)  : set of selectivity values of each plan on IC surface
         # If anorexic_reduction is disabled, anorexic_lambda is 0.0 and reduction is not called
-        self.d2o_m = {} # (scale)           : POSP set of plan_id, used for MSO & other computation
+        self.d2o_m   = {} # (scale)           : POSP set of plan_id, used for MSO & other computation
+        self.dp2t_m  = {} # (scale, plan_id)   : Multiplicity of each plan in optimizer grid, used for ASO computation of Native optimizer
         self.ae2ae_m = {} # (anorexic_lambda, (IC_id, plan_id)) useful for CSI Algorithms storage, checking if that execution has already occured in lower IC-contours
-        self.ae2m_m  = {}  # (anorexic_lambda, (IC_id, plan_id)) : multiplicity introduced due to anorexic reduction
+        self.ae2m_m  = {} # (anorexic_lambda, (IC_id, plan_id)) : multiplicity introduced due to anorexic reduction
 
     ######## DATA-BASE CONNECTION METHODS ########
     
-    def get_cost_and_plan(self, sel, plan=None, scale=None):
+    def get_cost_and_plan(self, sel, plan_id=None, scale=None): # return (result_cost, result_plan)
         "FPC of plan at some other selectivity value if plan is suplied, else optimal plan and its cost at supplied selectivity"
         scale = scale if (scale is not None) else self.base_scale
         while True:
@@ -268,9 +272,9 @@ class ScaleVariablePlanBouquet:
                 epp_list  = ' and '.join(str(x) for x in self.epp)
                 sel_list  = ' , '.join(str(x) for x in sel)
                 if plan_id is None:
-                	cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
+                    cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {};'.format(epp_list,sel_list,self.query)  )
                 else: # Plan supplied as XML string
-                    plan_path = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','xml', self.query_id, '{}.xml'.format(self.p2f_m[plan_id]) )
+                    plan_path = os.path.join( home_dir,master_dir,self.benchmark,'plans','xml', self.query_id, '{}.xml'.format(self.p2f_m[plan_id]) )
                     cursor.execute(  'explain (costs, verbose, format xml) selectivity ({})({}) {} FPC {};'.format(epp_list,sel_list,self.query,plan_path)  )
                 result_plan = cursor.fetchone()[0]
             except (Exception, psycopg2.DatabaseError) as error : # MultiThreaded Logging of Exception
@@ -288,68 +292,70 @@ class ScaleVariablePlanBouquet:
                     break
         return (result_cost, result_plan)
 
-    ######## PERFORMANCE METRICS METHODS ########
+    ######## ABSTRACTION OVER DATA-BASE CONNECTION ########   
 
-    def plan(self, sel, scale=None):
+    def plan(self, sel, scale=None): # return plan_val
         "Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         _, plan_val = self.get_cost_and_plan(sel, scale=scale)
         return plan_val
 
-    def cost(self, sel, plan_id=None, scale=None):
+    def cost(self, sel, plan_id=None, scale=None): # return cost_val
         "Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan_id, scale) not in self.spd2c_m:
-            cost_val, _ = self.get_cost_and_plan(sel, plan_id, scale=scale)
-            # Exponential Storage of |POSP|*RED**dim(EPP)
-            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val
+            cost_val, _ = self.get_cost_and_plan(sel, plan_id=plan_id, scale=scale)
+            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val             # Exponential Storage of |POSP|*RED**dim(EPP)
         else:
-        	cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
+            cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
         return cost_val
 
-    def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False):
+    ######## PERFORMANCE METRICS METHODS ########
+
+    def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False): # SubOpt
         "Ratio of plan on estimated sel to plan on actual sel"
         scale = scale if (scale is not None) else self.base_scale
-        optimal_cost = self.cost(act_sel, scale=scale)
-
         if not bouquet: # Classic Optimizer Style Metric
-            est_plan = self.sd2p_m[ (est_sel, scale) ]
-            return self.cost(act_sel, est_plan, scale) / optimal_cost
+            return self.cost(act_sel, plan_id=self.store( self.plan(est_sel, scale=scale) ), scale=scale) / self.cost(act_sel, scale=scale)
         else: # Bouquet Style Metric
-            bouquet_cost = 0
-            exec_list = self.simulate(act_sel, scale)
-            for plan in exec_list[:-1]: # Since up-to second last plan, budget based execution
-                bouquet_cost += self.id2c_m[ (self.pd2i_m[(plan,scale)], scale) ]
-            bouquet_cost += self.cost(act_sel, exec_list[-1], scale)
-            return bouquet_cost / self.cost(act_sel, scale)
-    def WorstSubOpt(self, act_sel, scale=None):
+            return (self.simulate(act_sel, scale=scale)['cost']) / self.cost(act_sel, scale=scale)
+
+    def WorstSubOpt(self, act_sel, scale=None): # WorstSubOpt (|POSP|)
         "SubOpt for all possible est_selectivities"
         scale = scale if (scale is not None) else self.base_scale
-        epp_iterator = itertools.product(*([sel_range_o[len(self.epp)],]*len(self.epp)))
-        return max( self.SubOpt(act_sel, est_sel, scale, bouquet=False) for est_sel in epp_iterator )
-    def MaxSubOpt(self, scale=None, bouquet=False):
-        "Global worst case"
+        cost_ls = [ self.cost(act_sel, plan_id=plan_id, scale=scale) for plan_id in self.d2o_m[scale] ]
+        return max(cost_ls, default=np.inf) / min(cost_ls, default=epsilon)
+
+    def MaxSubOpt(self, scale=None, bouquet=False): # MSO (|POSP|*RES**DIM)
+        "Global worst case of suboptimality"
         scale = scale if (scale is not None) else self.base_scale
-        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        if not bouquet: # Classic Optimizer Style Metric
+        epp_iterator = itertools.product(*[ sel_range_o[len(self.epp)] ]*len(self.epp))
+        if not bouquet: # Classic Optimizer Style Metric (computed over all plans either in Optimizer grid or Bouquet Exploration)
             return max( self.WorstSubOpt(act_sel, scale) for act_sel in epp_iterator )
         else: # Bouquet Style Metric
-            return max( self.SubOpt(act_sel, -1, scale, bouquet=True) for act_sel in epp_iterator )
+            return max( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) for act_sel in epp_iterator )
+
     def AvgSubOpt(self, scale=None, bouquet=False):
         "Average suboptimality over ESS under uniformity assumption"
         scale = scale if (scale is not None) else self.base_scale
-        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        if not bouquet: # Classic Optimizer Style Metric
-            epp_iterator2 = itertools.product(*([sel_range,]*len(self.epp)))
-            return sum( (self.SubOpt(act_sel, est_sel) for est_sel in epp_iterator for act_sel in epp_iterator) ) / ((len(sel_range)**len(self.epp))**2)
+        posp_ls = list(self.d2o_m[scale]) if scale in self.d2o_m else []
+        epp_iterator = itertools.product(*[ sel_range_o[len(self.epp)] ]*len(self.epp))
+        if not bouquet: # Classic Optimizer Style Metric (computed only over Optimizer grid as weightage of plan occurence is needed)
+            result = 0
+            for act_sel in epp_iterator:
+                cost_ls = [ self.cost(act_sel,plan_id=plan_id,scale=scale)                             for plan_id in posp_ls ]
+                freq_ls = [ (self.dp2t_m[(scale,plan_id)] if (scale,plan_id) in self.dp2t_m else 0)    for plan_id in posp_ls ]
+                average_cost = ( float( np.dot(cost_ls, freq_ls) ) / (len(sel_range_o[len(self.epp)])**len(self.epp)) )
+                result += ( average_cost / self.cost(act_sel, scale=scale) )
+            return result / (len(sel_range_o[len(self.epp)])**len(self.epp))
         else: # Bouquet Style Metric
-            return sum( (self.SubOpt(act_sel, est_sel) for act_sel in epp_iterator) ) / (len(sel_range)**len(self.epp))
+            return sum( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) for act_sel in epp_iterator ) / (len(sel_range_o[len(self.epp)])**len(self.epp))
+
     def MaxHarm(self, scale=None):
         "Harm using Plan Bouquet, over Classic Optimizer"
         scale = scale if (scale is not None) else self.base_scale
-        epp_iterator = itertools.product(*([sel_range,]*len(self.epp)))
-        return max(  ( self.SubOpt(act_sel,-1,scale,bouquet=True) / self.WorstSubOpt(act_sel,scale) ) for act_sel in epp_iterator  ) - 1
-
+        epp_iterator = itertools.product(*[ sel_range_o[len(self.epp)] ]*len(self.epp))
+        return max(  ( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) / self.WorstSubOpt(act_sel, scale=scale) ) for act_sel in epp_iterator  ) - 1
 
     ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
 
@@ -365,19 +371,19 @@ class ScaleVariablePlanBouquet:
 
     def store_plan(self, xml_string):
         "Method to store XML & JSON variants on plans in respective directories, return plan_id"
-		plan_serial = self.plan_serial(xml_string)
-		if plan_serial not in r2p_m:
-	        xml_plan_path  = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','xml',  self.query_id)
-	        json_plan_path = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','json', self.query_id)
-	        if not os.path.isdir(xml_plan_path):
-	            os.makedirs(xml_plan_path)
-	        if not os.path.isdir(json_plan_path):
-	            os.makedirs(json_plan_path)
-	        plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
+        plan_serial = self.plan_serial(xml_string)
+        if plan_serial not in r2p_m:
+            xml_plan_path  = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','xml',  self.query_id)
+            json_plan_path = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','json', self.query_id)
+            if not os.path.isdir(xml_plan_path):
+                os.makedirs(xml_plan_path)
+            if not os.path.isdir(json_plan_path):
+                os.makedirs(json_plan_path)
+            plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
             with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
-	            f.write( xml_string )
-	        self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
-	        self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
+                f.write( xml_string )
+            self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
+            self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
         return self.r2p_m[plan_serial]
 
     ######## MAPS SAVING & RE-LOADING METHODS FOR RECOMPUTATION AVOIDANCE ON DIFFERENT INVOCATIONS ########    
@@ -403,6 +409,7 @@ class ScaleVariablePlanBouquet:
         self.save_dict( self.iad2p_m       , os.path.join( self.maps_dir,'iad2p_m'  ) )
         self.save_dict( self.iapd2s_m      , os.path.join( self.maps_dir,'iapd2s_m' ) )
         self.save_dict( self.d2o_m         , os.path.join( self.maps_dir,'d2o_m'    ) )
+        self.save_dict( self.dp2t_m        , os.path.join( self.maps_dir,'dp2t_m'   ) )
         self.save_dict( self.ae2ae_m       , os.path.join( self.maps_dir,'ae2ae_m'  ) )
         self.save_dict( self.ae2m_m        , os.path.join( self.maps_dir,'ae2m_m'   ) )
 
@@ -427,16 +434,18 @@ class ScaleVariablePlanBouquet:
     def load_maps(self):
         "Loads previous maps values into objects for repeatable execution over difference simulation"
         if os.path.isdir(self.maps_dir):
-            self.p2f_m     = self.load_dict( os.path.join( self.maps_dir,'p2f_m'     ) )
-            self.f2r_m     = self.load_dict( os.path.join( self.maps_dir,'f2r_m'     ) )
-            self.r2p_m     = self.load_dict( os.path.join( self.maps_dir,'r2p_m'     ) )
-            self.sd2p_m    = self.load_dict( os.path.join( self.maps_dir,'sd2p_m'    ) )
-            self.spd2c_m   = self.load_dict( os.path.join( self.maps_dir,'spd2c_m'   ) )
-            self.id2c_m    = self.load_dict( os.path.join( self.maps_dir,'id2c_m'    ) )
-            self.iad2p_m   = self.load_dict( os.path.join( self.maps_dir,'iad2p_m'   ) )
-            self.iapd2s_m  = self.load_dict( os.path.join( self.maps_dir,'iapd2s_m'  ) )
-            self.d2o_m     = self.load_dict( os.path.join( self.maps_dir,'d2o_m'     ) )
-            self.ae2ae_m   = self.load_dict( os.path.join( self.maps_dir,'ae2ae_m'   ) )
+            self.p2f_m     = self.load_dict( os.path.join( self.maps_dir,'p2f_m'    ) )
+            self.f2r_m     = self.load_dict( os.path.join( self.maps_dir,'f2r_m'    ) )
+            self.r2p_m     = self.load_dict( os.path.join( self.maps_dir,'r2p_m'    ) )
+            self.sd2p_m    = self.load_dict( os.path.join( self.maps_dir,'sd2p_m'   ) )
+            self.spd2c_m   = self.load_dict( os.path.join( self.maps_dir,'spd2c_m'  ) )
+            self.id2c_m    = self.load_dict( os.path.join( self.maps_dir,'id2c_m'   ) )
+            self.iad2p_m   = self.load_dict( os.path.join( self.maps_dir,'iad2p_m'  ) )
+            self.iapd2s_m  = self.load_dict( os.path.join( self.maps_dir,'iapd2s_m' ) )
+            self.d2o_m     = self.load_dict( os.path.join( self.maps_dir,'d2o_m'    ) )
+            self.dp2t_m    = self.load_dict( os.path.join( self.maps_dir,'dp2t_m'   ) )
+            self.ae2ae_m   = self.load_dict( os.path.join( self.maps_dir,'ae2ae_m'  ) )
+            self.ae2m_m    = self.load_dict( os.path.join( self.maps_dir,'ae2m_m'   ) )
 
             exec_specific = self.load_dict( os.path.join( self.maps_dir,'exec_specific' ) )
             if self.exec_specific['random_p_d'] != exec_specific['random_p_d']:
@@ -450,23 +459,15 @@ class ScaleVariablePlanBouquet:
 
     ######## BOUQUET EXECUTION METHODS ########S
 
-    def build_posp(self, scale=None):
-    	"Optimal plans over ESS, exponential time, bouquet plans also added during compilation"
-    	scale = scale if (scale is not None) else self.base_scale
-		if scale not in self.d2o_m:
-			self.d2o_m[scale] = set()
-    	for sel in itertools.product(*[[ sel_range_o[len(self.epp)] ]]*len(self.epp)):
-    		self.d2o_m[scale].add( self.store( self.plan(self, scale=scale) ) )
-
     def base_gen(self, scale=None):
         "Step 0: Find cost values for each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
-		if scale not in self.d2o_m:
-			self.d2o_m[scale] = set()
+        if scale not in self.d2o_m:
+            self.d2o_m[scale] = set()
         sel_min, sel_max = (sel_range_p[len(self.epp)][0],)*len(self.epp), (sel_range_p[len(self.epp)][-1],)*len(self.epp)
         # Getting plans at extremas, storing them and serializing them
         plan_min_id, plan_max_id = self.store( self.plan(sel_min, scale=scale) ), self.store( self.plan(sel_max, scale=scale) )
-		self.d2o_m[scale].update( {plan_min_id,plan_max_id} )
+        self.d2o_m[scale].update( {plan_min_id,plan_max_id} )
         # Setting plan entries for optimal plan at locations and cost values at those location
         self.C_min, self.C_max = self.cost(sel_min, plan_min_id, scale=scale), self.cost(sel_max, plan_max_id, scale=scale)
         self.sd2p_m[(sel_min,scale)], self.sd2p_m[(sel_max,scale)] = plan_min_id, plan_max_id
@@ -503,7 +504,6 @@ class ScaleVariablePlanBouquet:
             self.anorexic_reduction()
 
     def anorexic_reduction(self, plan_dict):
-
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
         contour_points = set().union( *(plan_dict[plan_id] for plan_id in plan_dict) )
         eating_capacity = {}
@@ -581,31 +581,61 @@ class ScaleVariablePlanBouquet:
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
         scale = scale if (scale is not None) else self.base_scale
+        simulation_result = {}
 
         if random_p:
-        	random_p_val = np.random.randint(self.exec_specific['random_p_d'])
+            random_p_val = np.random.randint(self.exec_specific['random_p_d'])
         else:
-        	random_p_val = self.exec_specific['random_p_d']-1
+            random_p_val = self.exec_specific['random_p_d']-1
         
         '''
         Anorexic reduction based execution, with options for both randomization and covering sequence
         '''
+        return simulation_result
+
+    def evaluate(self, scale=None):
+        "Evaluates various metrics of Native optimizer & Plan Bouquet"
         pass
+
+
+    def build_posp(self, scale=None):
+        "Optimal plans over ESS, exponential time, bouquet plans also added during compilation"
+        scale = scale if (scale is not None) else self.base_scale        
+        if scale not in self.d2o_m:
+            self.d2o_m[scale] = set()
+        for sel in itertools.product(*[ sel_range_o[len(self.epp)] ]*len(self.epp)):
+            plan_id = self.store( self.plan(self, scale=scale) )
+            self.d2o_m[scale].add( plan_id )
+            if (scale, plan_id) not in dp2t_m:
+                dp2t_m[(scale, plan_id)] = 0
+            dp2t_m[(scale, plan_id)] += 1
+        
 
     def run(self):
         "Method to"
         if self.bouquet_runnable:
+            if scale not in self.exec_specific:
+                self.exec_specific[scale] = {}
             self.load_maps()
-            self.base_gen()
-            self.nexus()
-            if covering:
-                self.covering_sequence()
-            # exec_list = self.simulate(act_sel, scale) # This function is indeed called from metrices, and call be later from anywhere to get list of execution
-            self.build_posp(self.base_scale)
-            self.save_maps()
+            try:
+                self.base_gen()
+                self.nexus()
+                if covering:
+                    self.covering_sequence()
+                # exec_list = self.simulate(act_sel, scale) # This function is indeed called from metrices, and call be later from anywhere to get list of execution
+                self.build_posp(self.base_scale)
+                # Add plans discovered duing bouquet aslso in POSP set, optional
+                pass
 
-            self.simulate()
-            self.evaluate()
+                self.save_maps()
+
+                self.simulate()
+            except:
+                pass
+            else:
+                pass
+            finally:
+                self.evaluate()
 
 
 
