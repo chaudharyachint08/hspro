@@ -131,7 +131,7 @@ parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=o
 # Tuple Type Arguments
 parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(1000,300,100,50,30) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
 parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,300,100,50,30) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
-parser.add_argument("--db_scales" , type=eval , dest='db_scales' , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
+parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
 
 args, unknown = parser.parse_known_args()
 globals().update(args.__dict__)
@@ -282,7 +282,7 @@ class ScaleVariablePlanBouquet:
                 break_flag = False
             else:
                 json_obj = pf.xml2json(result_plan,mode='string')
-                result_cost = json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"]
+                result_cost = float( json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
                 break_flag = True
             finally:
                 if connection:
@@ -355,15 +355,26 @@ class ScaleVariablePlanBouquet:
     ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
 
     def plan_serial_helper(self, json_obj):
-        "Recursive helper function for plan_serial"
-        # CHECKPOINT : write code here for JSON to serial string conversion
-        return 'PLAN_STRING_REPRESENTATION'
+        "Recursive helper function for plan_serial, build pre-order detail of plan"
+        plan_string = ''
+        if "Plan" in json_obj:
+            # CHECKPOINT : write code here for each Node-Type and corresponding attributes
+            pass
+        if "Plans" in json_obj:
+            if "Plan" in json_obj["Plans"]:
+                if type(json_obj["Plans"]["Plan"])==list:
+                    for sub_plan in json_obj["Plans"]["Plan"]:
+                        plan_string = ' $ '.join(( plan_string, self.plan_serial_helper(sub_plan) ))
+                else:
+                    sub_plan = json_obj["Plans"]["Plan"]
+                    plan_string = ' $ '.join(( plan_string, self.plan_serial_helper(sub_plan) ))
+        return plan_string
+    
     def plan_serial(self, xml_string):
         "Parsing function to convert plan object (XML/JSON) in to a string"
         json_obj = pf.xml2json(xml_string, mode='string')
         plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
         return plan_string
-
     def store_plan(self, xml_string): # return self.r2p_m[plan_serial]
         "Method to store XML & JSON variants on plans in respective directories, return plan_id"
         plan_serial = self.plan_serial(xml_string)
@@ -477,31 +488,6 @@ class ScaleVariablePlanBouquet:
         self.iad2p_m[(self.random_p_IC_count-1,0.0,scale)]         = { plan_max_id }
         self.ipd2s_m[(self.random_p_IC_count-1,plan_max_id,scale)] = { sel_max }
 
-    def nexus_2d():
-        "2 dimensional"
-        pass
-    def nexus_helper():
-        pass
-    def nexus(self, IC_id, scale=None):
-        "Step 1: Find Plans on each Iso-cost surface"
-        scale = scale if (scale is not None) else self.base_scale
-        '''
-        # Locating Initial Seed, Binary Search based edges selection
-        Location L(x, y) is included in the contour C if it satisfies the following conditions:
-            (a) C ≤ C_opt[L] ≤ (1 + α)C and
-            (b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
-        # Neighborhood EXploration Using Seed (NEXUS)
-        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
-        The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
-        '''
-
-
-        org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
-        for plan_id in org_plans: # Identity mapping for CSI & cost-multiplicity without ANOREXIC reduction
-            self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
-        if self.anorexic_lambda:
-            self.anorexic_reduction(IC_id, scale=scale)
-
     def anorexic_reduction(self, IC_id, scale=None):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -535,8 +521,48 @@ class ScaleVariablePlanBouquet:
             if covering:
                 self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
             else: # This should be made mandatory as CSI will use points under ANOREXIC covering, not optimal regions
-                del self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)]
+                del self.iapd2s_m[ (IC_id,0.0,max_eating_plan_id,scale) ]
         self.iad2p_m[(IC_id, self.anorexic_lambda, scale)] = reduced_plan_set
+
+
+
+
+    def nexus_2d():
+        "2 dimensional"
+        pass
+    def nexus_helper():
+        pass
+    def nexus(self, IC_id, scale=None):
+        "Step 1: Find Plans on each Iso-cost surface"
+        scale = scale if (scale is not None) else self.base_scale
+        '''
+        # Locating Initial Seed, Binary Search based edges selection
+        Location L(x, y) is included in the contour C if it satisfies the following conditions:
+            (a) C ≤ C_opt[L] ≤ (1 + α)C and
+            (b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
+        # Neighborhood EXploration Using Seed (NEXUS)
+        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
+        The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
+        '''
+        # Locating initial seed boundary
+        D = len(self.epp)
+        for res_count in range(D):
+            s, t = D-(res_count+1), res_count
+            low_end, upr_end = ((sel_range_p[D][0],)*(s+1)+(sel_range_p[D][-1],)*(t)), ((sel_range_p[D][0],)*(s)+(sel_range_p[D][-1],)*(t+1))
+            if self.cost(low_end, scale=scale)<=self.id2c_m[D] and self.id2c_m[D]<self.cost(low_end, scale=scale):
+                break
+        # Locating initial seed using binary_search
+
+            pass
+
+
+
+        org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
+        for plan_id in org_plans: # Identity mapping for CSI & cost-multiplicity without ANOREXIC reduction
+            self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
+        if self.anorexic_lambda:
+            self.anorexic_reduction(IC_id, scale=scale)
+
 
 
 
@@ -550,7 +576,6 @@ class ScaleVariablePlanBouquet:
             random_p_val = self.exec_specific['random_p_d']-1
         IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
 
-
         # CHECKPOINT
         # Executing NEXUS Algorithm for multi-dimensions
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix)) for IC_ix in IC_indices ]
@@ -560,11 +585,15 @@ class ScaleVariablePlanBouquet:
             nexus_thread.join()
         # CSI algorithm, for further reducing effective plan density on each contour
         if covering:
-            self.covering_sequence()
-        else:
-            pass # Fill Identity mapping into covering, as each execution if cover of itself
+            self.covering_sequence(scale=scale)
 
-
+        for IC_ix in IC_indices:
+            for plan_id in self.iad2p_m[(IC_ix, 0.0, scale)]:
+                if (IC_ix, 0.0, plan_id, scale) in self.iapd2s_m:
+                    del self.iapd2s_m[ (IC_ix, 0.0, plan_id, scale) ]
+            for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
+                if (IC_ix, self.anorexic_lambda, plan_id, scale) in self.iapd2s_m:
+                    del self.iapd2s_m[ (IC_ix, self.anorexic_lambda, plan_id, scale) ]
         # Building Boolean array for each execution only once, in case of covering
         zagged_bool = {}
         for IC_ix in IC_indices:
@@ -593,17 +622,14 @@ class ScaleVariablePlanBouquet:
                             simulation_result['cost'] += cost_threshold
                         total_cost += cost_threshold
                     zagged_bool[cover_IC_ix][cover_plan_id] = True
-
                     curr_IC_cost_ls.append( min((cost_val, cost_threshold)) )
                     curr_IC_total_cost_ls.append( total_cost )
-
             if (IC_ix==IC_indices[0]):
                 simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / (min(curr_IC_cost_ls)/r_ratio)
             else:
                 simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / min(prev_IC_cost_ls)
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
             simulation_result['MSO'] = max( simulation_result['MSO_k'].values() )
-                
         return simulation_result
 
     def evaluate(self, scale=None):
@@ -629,11 +655,11 @@ class ScaleVariablePlanBouquet:
                 self.exec_specific[scale] = {}
             self.load_maps()
             try:
-                self.base_gen()
+                self.base_gen( scale=self.base_scale )
+                simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
                 # Add plans discovered duing bouquet also in POSP set, optional
                 pass
-                self.simulate()
-                self.build_posp(self.base_scale)
+                self.build_posp( scale=self.base_scale )
             except:
                 pass
             else:
@@ -641,7 +667,6 @@ class ScaleVariablePlanBouquet:
             finally:
                 self.save_maps()
                 self.evaluate()
-
 
 
 

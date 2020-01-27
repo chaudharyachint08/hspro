@@ -3,37 +3,47 @@
 
 ## To-Do List
 <pre>
-#### ANOREXIC REDUCTION ####
-Anorexic Reduction not as mapping, a plan-optimal regions can be jointly swallowed by two plans
-Seperate cost threshold for each execution, as anorexic reduction might have happended or not.
-Cost value of contour not always shifted by (1+Anorexic_Lambda)*cost[IC_id]
+#### NEXUS ALGORITHM ####
+n-Dimensional generic understanding and implementation of NEXUS Algorithm
+Initial Seed discovery using Bound & Binary Search
+Iterative & Recursive formulation to lower dimensions
+
+#### TRANSACTION STYLE UPDATES OF MAPS VIA ALGORITHMS ####
+Each map stores and deletes some information which is used in later stages
+same information can be later used to avoid re-compilation during experiments
+some of these maps should be built completely or none at all
 
 
 #### COVERING SEQUENCE IDENTIFICATION ####
 CSI is just mapping from one execution to another which is cover of what of keyed execution
 On Demand CSI invocation if Randomization 2 is deployed, for which is random_p_d CSI are there, into joint mapping
-Indexing of 
 
 Ideally, during CSI, cost thresholds are different for each execution, in practice they should be used
 Other easier option is to use contour threshold, but will create an issue,
 If different shift of cost value in each contour due to different anorexic reduction
 
 
-#### Randomization 2 ####
+
+#### ANOREXIC REDUCTION #### DONE !!
+Anorexic Reduction not as mapping, a plan-optimal regions can be jointly swallowed by two plans
+Seperate cost threshold for each execution, as anorexic reduction might have happended or not.
+Cost value of contour not always shifted by (1+Anorexic_Lambda)*cost[IC_id]
+
+#### Randomization 2 #### DONE !!
 Different CSI Invocation will be needed, each with m+1 for others, & m IC-contours for no-left shift placement of contours
 each will be on-demand execution with saving of cover into maps of form (Execution -> Execution)
 
-#### Randomization 1 ####
+#### Randomization 1 #### DONE !!
 Shuffle of executions on each contour
 
-#### PERFORMANCE METRICS ####
+#### PERFORMANCE METRICS #### DONE !!
 Below maps to be added for plan choice decision making
 (Scale -> POSP)
 For MSO or Any-performance metric, RED**|ESS| points would be needed
 Plan_Bouquet compilation can be done at higher resolution
 While MSO & Other peformance metrics should be done on lower dimesions, as exponential bombing of number of points to be evaluated
 
-#### SIMULATION ####
+#### SIMULATION #### DONE !!
 Boolean Zagged array for only once execution during simulation
 MSO_k also evaluated at same time for Bouquet Execution (m or m+1 contours, depending upon R2 variable)
 </pre>
