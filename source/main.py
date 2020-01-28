@@ -129,8 +129,8 @@ parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='
 parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
 parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
 # Tuple Type Arguments
-parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(1000,300,100,50,30) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,300,100,50,30) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100000,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
+parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(100000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
 parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
 
 args, unknown = parser.parse_known_args()
@@ -223,11 +223,19 @@ class ScaleVariablePlanBouquet:
             self.query = f.read().strip()
         try:
             with my_open(os.path.join(home_dir,master_dir,self.benchmark,'epp','{}.epp'.format(query_id))) as f:
-                self.epp = []
+                self.epp, self.epp_dir = [], []
                 for line in f.readlines():
                     line = line.strip()
                     if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
-                        self.epp.append( line.split('|')[0].strip() )
+                        line = line.split('|') # Below picks EPP from file line, if not commented, also direction, either direction of cost monotonicity
+                        epp_line, epp_dir  = line[0].strip(), (int(line[1].strip()) if len(line)>1 else 1)
+                        if not epp_line.startswith('--'):
+                            self.epp.append( epp_line )
+                            self.epp_dir.append( epp_dir )
+                self.Dim = len(self.epp)
+                self.resolution_o, self.resolution_p = resolution_o[self.Dim], resolution_p[self.Dim]
+                self.sel_range_o_inc, self.sel_range_p_inc = sel_range_o[self.Dim][::+1], sel_range_p[self.Dim][::+1]
+                self.sel_range_o_dec, self.sel_range_p_dec = sel_range_o[self.Dim][::-1], sel_range_p[self.Dim][::-1]
         except:
             self.bouquet_runnable = False
         else:
@@ -355,7 +363,7 @@ class ScaleVariablePlanBouquet:
     ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
 
     def plan_serial_helper(self, json_obj):
-        "Recursive helper function for plan_serial, build pre-order detail of plan"
+        "Recursive helper function for plan_serial, build (pre-order + child_level + child_ix) detail of plan"
         plan_string = ''
         if "Plan" in json_obj:
             # CHECKPOINT : write code here for each Node-Type and corresponding attributes
@@ -419,6 +427,7 @@ class ScaleVariablePlanBouquet:
         self.save_dict( self.aed2aed_m     , os.path.join( self.maps_dir,'aed2aed_m' ) )
         self.save_dict( self.aed2m_m       , os.path.join( self.maps_dir,'aed2m_m'   ) )
 
+    # CHECKPOINT (new maps added later, remaping of those not in below code)
     def reindex(self, old_random_p_d, new_random_p_d):
         "Fucntion for changing Indexes for Iso-cost contours, after different loading"
         incr_ratio = (new_random_p_d//old_random_p_d)
@@ -465,12 +474,20 @@ class ScaleVariablePlanBouquet:
 
     ######## BOUQUET EXECUTION METHODS ########
 
+    def build_sel(self, sel_ix_ls, mode='p'):
+        "builds selectivity point in ESS from index of points in ESS, this should be made inline later"
+        if   mode=='p':
+            return tuple( (self.sel_range_p_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_p_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
+        elif mode=='o':
+            return tuple( (self.sel_range_o_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_o_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
+
     def base_gen(self, scale=None):
         "Step 0: Find cost values for each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
         if scale not in self.d2o_m:
             self.d2o_m[scale] = set()
-        sel_min, sel_max = (sel_range_p[len(self.epp)][0],)*len(self.epp), (sel_range_p[len(self.epp)][-1],)*len(self.epp)
+        sel_min_ix, sel_max_ix = (0,)*self.Dim, (self.resolution_p-1)*self.Dim
+        sel_min,    sel_max    = self.build_sel(sel_min_ix), self.build_sel(sel_max_ix)
         # Getting plans at extremas, storing them and serializing them
         plan_min_id, plan_max_id = self.store( self.plan(sel_min, scale=scale) ), self.store( self.plan(sel_max, scale=scale) )
         self.d2o_m[scale].update( {plan_min_id,plan_max_id} )
@@ -526,7 +543,6 @@ class ScaleVariablePlanBouquet:
 
 
 
-
     def nexus_2d():
         "2 dimensional"
         pass
@@ -544,14 +560,42 @@ class ScaleVariablePlanBouquet:
         If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
         The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
         '''
-        # Locating initial seed boundary
-        D = len(self.epp)
-        for res_count in range(D):
-            s, t = D-(res_count+1), res_count
-            low_end, upr_end = ((sel_range_p[D][0],)*(s+1)+(sel_range_p[D][-1],)*(t)), ((sel_range_p[D][0],)*(s)+(sel_range_p[D][-1],)*(t+1))
-            if self.cost(low_end, scale=scale)<=self.id2c_m[D] and self.id2c_m[D]<self.cost(low_end, scale=scale):
+        
+        # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
+        lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
+        for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
+            s, t = self.Dim-(dim_count+1), dim_count
+            low_end_ix,  upr_end_ix  = ( (0,)*(s+1) + (self.resolution_p-1,)*(t) ), ( (0,)*(s) + (self.resolution_p-1,)*(t+1) )
+            low_end_sel, upr_end_sel = self.build_sel(low_end_ix), self.build_sel(upr_end_ix)
+            if lower_cost is None:
+                lower_cost = self.cost(low_end_sel, scale=scale)
+            upper_cost = self.cost(upr_end_sel, scale=scale)
+            if lower_cost<=contour_cost and contour_cost<upper_cost
                 break
+            lower_cost = upper_cost
         # Locating initial seed using binary_search
+        
+        l_ix, u_ix = 0, (self.resolution_p - 1)-1
+        while True:
+            m_ix = (l_ix+u_ix)//2
+            mid_sel_ix = ( (0,)*s + (m_ix,) + (self.resolution_p-1,)*t )
+            mid_sel    = self.build_sel(mid_sel_ix)
+            mid_cost   = self.cost(mid_sel, scale=scale)
+            if contour_cost<=mid_cost and mid_cost<=(1+nexus_tolerance)*contour_cost:
+                pass
+            elif mid_cost < contour_cost:
+                l_ix = m_ix+1
+            else:
+                u_ix = m_ix-1
+        if not m_ix: # If Binary search yields lowest index possible, no need to rest two searches
+            val_ix = m_ix
+        else:
+            pass
+            # Exponential search to find lower bound of last desired point in [C,(1+α)C]
+            pass
+            # Bisection search to find exact point which lies lowest in [C,(1+α)C]
+            pass
+            val_ix = 0
 
             pass
 
