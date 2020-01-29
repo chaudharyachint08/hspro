@@ -573,8 +573,7 @@ class ScaleVariablePlanBouquet:
             if lower_cost<=contour_cost and contour_cost<upper_cost
                 break
             lower_cost = upper_cost
-        # Locating initial seed using binary_search
-        
+        # Binary search for finding value within interval [C,(1+α)C]
         l_ix, u_ix = 0, (self.resolution_p - 1)-1
         while True:
             m_ix = (l_ix+u_ix)//2
@@ -582,20 +581,38 @@ class ScaleVariablePlanBouquet:
             mid_sel    = self.build_sel(mid_sel_ix)
             mid_cost   = self.cost(mid_sel, scale=scale)
             if contour_cost<=mid_cost and mid_cost<=(1+nexus_tolerance)*contour_cost:
-                pass
+                break
             elif mid_cost < contour_cost:
                 l_ix = m_ix+1
             else:
                 u_ix = m_ix-1
         if not m_ix: # If Binary search yields lowest index possible, no need to rest two searches
-            val_ix = m_ix
+            v_ix = m_ix
         else:
-            pass
-            # Exponential search to find lower bound of last desired point in [C,(1+α)C]
-            pass
+            # CHECKPOINT
+            # Exponential search to find point outside [C,(1+α)C] on left side
+            exp_step = 1
+            while True:
+                e_ix = max( (m_ix-exp_step, 0) )                    
+                exp_sel_ix = ( (0,)*s + (e_ix,) + (self.resolution_p-1,)*t )
+                exp_sel    = self.build_sel(exp_sel_ix)
+                exp_cost   = self.cost(exp_sel, scale=scale)
+                if m_ix > exp_step:
+                    if exp_cost < contour_cost:
+                        break
+                    exp_step *= 2 # Increase step size by 2 each time, to find a point outside interval
+                else: # if exp_step is so high that will go to 0 index or ever lower, than 0 is last limit
+                    break
             # Bisection search to find exact point which lies lowest in [C,(1+α)C]
+            ll_ix,   lr_ix,   rl_ix,   rr_ix   = e_ix, None, None, m_ix
+            ll_cost, lr_cost, rl_cost, rr_cost = e_ix, None, None, m_ix
+            while True:
+                ttl_ln = rr_ix - ll_ix + 1
+                lft_ln, rgt_ln = ttl_ln//2
+                pass
             pass
-            val_ix = 0
+            v_ix = 0
+        initial_seed_ix = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
 
             pass
 
