@@ -23,7 +23,7 @@ fig = plt.figure()
 ax = fig.gca(projection='3d')
 
 # Make data.
-max_scale, max_dim, plot_res = 100, 5, 1000
+max_scale, max_dim, plot_res = 10, 2, 1000
 
 max_opt_call = 10**5
 
@@ -32,7 +32,7 @@ Y = np.linspace(1, max_dim,   plot_res)
 
 X, Y = np.meshgrid(X, Y)
 
-Z = np.log2(np.log2(X)**Y)
+Z = np.log2(X)**Y
 
 # Plot the surface.
 # surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
