@@ -589,24 +589,9 @@ class ScaleVariablePlanBouquet:
             del self.iapd2s_m[ (IC_id,0.0,plan_id,scale) ]
 
 
-    def nexus_2d():
-        "2 dimensional"
-        pass
-    def nexus_helper():
-        pass
     def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
-        scale = scale if (scale is not None) else self.base_scale
-        '''
-        # Locating Initial Seed, Binary Search based edges selection
-        Location L(x, y) is included in the contour C if it satisfies the following conditions:
-            (a) C ≤ C_opt[L] ≤ (1 + α)C and
-            (b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
-        # Neighborhood EXploration Using Seed (NEXUS)
-        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
-        The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
-        '''
-        
+        scale = scale if (scale is not None) else self.base_scale       
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
         lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
         for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
@@ -616,11 +601,11 @@ class ScaleVariablePlanBouquet:
             if lower_cost is None:
                 lower_cost = self.cost(low_end_sel, scale=scale)
             upper_cost = self.cost(upr_end_sel, scale=scale)
-            if lower_cost<=contour_cost and contour_cost<upper_cost
+            if lower_cost<=contour_cost and contour_cost<upper_cost:
                 break
             lower_cost = upper_cost
         # Binary search for finding value within interval [C,(1+α)C]
-        l_ix, u_ix = 0, (self.resolution_p - 1)-1
+        l_ix, u_ix = 0, (self.resolution_p - 1)-1 # -1 is done twice, as limit are from 0<=v<(RES-1)
         while True:
             m_ix = (l_ix+u_ix)//2
             mid_sel_ix = ( (0,)*s + (m_ix,) + (self.resolution_p-1,)*t )
@@ -632,38 +617,54 @@ class ScaleVariablePlanBouquet:
                 l_ix = m_ix+1
             else:
                 u_ix = m_ix-1
-        if not m_ix: # If Binary search yields lowest index possible, no need to rest two searches
-            v_ix = m_ix
-        else:
-            # CHECKPOINT
-            # Exponential search to find point outside [C,(1+α)C] on left side
-            exp_step = 1
-            while True:
-                e_ix = max( (m_ix-exp_step, 0) )                    
-                exp_sel_ix = ( (0,)*s + (e_ix,) + (self.resolution_p-1,)*t )
-                exp_sel    = self.build_sel(exp_sel_ix)
-                exp_cost   = self.cost(exp_sel, scale=scale)
-                if m_ix > exp_step:
-                    if exp_cost < contour_cost:
-                        break
-                    exp_step *= 2 # Increase step size by 2 each time, to find a point outside interval
-                else: # if exp_step is so high that will go to 0 index or ever lower, than 0 is last limit
-                    break
-            # Bisection search to find exact point which lies lowest in [C,(1+α)C]
-            ll_ix,   lr_ix,   rl_ix,   rr_ix   = e_ix, None, None, m_ix
-            ll_cost, lr_cost, rl_cost, rr_cost = e_ix, None, None, m_ix
-            while True:
-                ttl_ln = rr_ix - ll_ix + 1
-                lft_ln, rgt_ln = ttl_ln//2
-                pass
-            pass
-            v_ix = 0
-        initial_seed_ix = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
+        # Repeated Exponential search to find leftmost point inside [C,(1+α)C]
+        v_ix = m_ix
+        while True:
+	        continue_exp, exp_step = False, 1
+	        while v_ix >= exp_step:
+	            e_ix = v_ix-exp_step
+	            exp_sel_ix = ( (0,)*s + (e_ix,) + (self.resolution_p-1,)*t )
+	            exp_sel    = self.build_sel(exp_sel_ix)
+	            exp_cost   = self.cost(exp_sel, scale=scale)
+                if contour_cost <= exp_cost:
+                	v_ix = e_ix
+                	exp_step *= 2 # Increase step size by 2 each time
+                	continue_exp = True # Future attempt of Exponential search
+                else:
+                    break                
+	        if not continue_exp:
+	        	break
+        # Initial seed value, which will explore into D-dimensional surface
+        initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
+        initial_seed_sel = self.build_sel(initial_seed_ix)
+        initial_seed_plan_id = self.store_plan( self.plan(initial_seed_sel, scale=scale) )
+        iad2p_m, iapd2s_m = {}, {} # Local Data Structures will be merged at end of entire contour exploration
+        iad2p_m[(IC_id,0.0,scale)] = { initial_seed_plan_id }
+        iapd2s_m[(IC_id,0.0,initial_seed_plan_id,scale)] = { initial_seed_sel }
 
+        '''
+        # Locating Initial Seed, Binary Search based edges selection
+        Location L(x, y) is included in the contour C if it satisfies the following conditions:
+            (a) C ≤ C_opt[L] ≤ (1 + α)C and
+            (b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
+        # Neighborhood EXploration Using Seed (NEXUS)
+        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
+        The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
+        '''
+
+        # CHECKPOINT
+        # Exploration using Initial seed in Dim dimensional space
         pass
 
 
-
+        # Merging to Object Data-structures after exploration is complete
+        self.obj_lock.acquire()
+        for key in iad2p_m:
+        	self.iad2p_m[key] = iad2p_m[key]
+        for key in iapd2s_m:
+        	self.iapd2s_m[key] = iapd2s_m[key]
+        self.obj_lock.release()
+        # Map generation for CSI & Anorexic Reduction cost-multiplicity
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         for plan_id in org_plans: # Identity mapping for cost-multiplicity without ANOREXIC reduction  & CSI
             self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
