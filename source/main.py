@@ -81,9 +81,7 @@ warnings.filterwarnings("ignore")
 import psycopg2
 import plan_format as pf
 
-
 os.environ['KERAS_BACKEND'] = 'tensorflow'
-
 # Importing Standard Data Science & Deep Learning Libraries
 ls = [('matplotlib','mpl'),('matplotlib.pyplot','plt'),('seaborn','sns'),
     ('numpy','np'),'scipy',    'sklearn',
@@ -105,7 +103,7 @@ for i in ls:
 parser = argparse.ArgumentParser()
 # Bool Type Arguments
 parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
-parser.add_argument("--new_plan" , type=eval , dest='new_plan' , default=False)
+parser.add_argument("--new_info" , type=eval , dest='new_info' , default=False) # To generate new information, like plans, contours, points
 parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
 parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
 parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
@@ -242,7 +240,7 @@ class ScaleVariablePlanBouquet:
     ""
     def __init__(self, benchmark, query_id, base_scale, exec_scale, db_scales, stderr):
         "Instance initializer: query_id is name of query file, which is same as ID of epp file also"
-        self.stderr, self.benchmark, self.query_id, self.base_scale, self.exec_scale, self.db_scales = stderr, benchmark, query_id, base_scale, exec_scale, db_scales
+        self.benchmark, self.query_id, self.base_scale, self.exec_scale, self.db_scales, self.stderr = benchmark, query_id, base_scale, exec_scale, db_scales, stderr
         self.maps_dir = os.path.join(master_dir,self.benchmark,'maps','{}'.format(self.query_id))
         with my_open(os.path.join(home_dir,master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
@@ -268,7 +266,8 @@ class ScaleVariablePlanBouquet:
         self.exec_specific = {}
         self.exec_specific['random_p_d'] = random_p_d
         self.anorexic_lambda = anorexic_lambda if anorexic else 0.0
-        'Naming conventions for maps'
+        self.obj_lock = threading.Lock() # Threading lock to provide exclusive write access of object-wide variables
+        'Naming conventions of maps for saving compilation and other computation over multiple invocation'
         # [a,c,d,e,i,m,o,s,t] are [ anorexic_lambda, cost_val, database_scale, execution(IC_id,plan_id), IC_id, cost_multiplicity due to anorexic_red., POSP set, selectivity, (number of occurence) ]
         # [f,p,r] are [ file_name(without_extension), plan_id, representation_plan(serial string) ]
         # Below 3 have cyclic, and any of them can be used to derive any other, using either one or two maps
@@ -291,7 +290,7 @@ class ScaleVariablePlanBouquet:
 
 
     ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
-
+    # CHECKPOINT
     def plan_serial_helper(self, json_obj):
         "Recursive helper function for plan_serial, build (pre-order + child_level + child_ix) detail of plan"
         plan_string = ''
@@ -307,7 +306,6 @@ class ScaleVariablePlanBouquet:
                     sub_plan = json_obj["Plans"]["Plan"]
                     plan_string = ' $ '.join(( plan_string, self.plan_serial_helper(sub_plan) ))
         return plan_string
-    
     def plan_serial(self, xml_string):
         "Parsing function to convert plan object (XML/JSON) in to a string"
         json_obj = pf.xml2json(xml_string, mode='string')
@@ -429,19 +427,35 @@ class ScaleVariablePlanBouquet:
     ######## MAPS SAVING & RE-LOADING METHODS FOR RECOMPUTATION AVOIDANCE ON DIFFERENT INVOCATIONS ########    
 
     def save_dict(self, dict_obj, file_name):
-        "Serialize data into file"
+        "Serialize json into file"
         json.dump( dict_obj, my_open(file_name,'w') )
     def load_dict(self, file_name):
-        "Read data from file"
+        "Read json from file"
         return json.load( my_open(file_name) )
     def save_obj(self, obj, file_name):
-        "Serialize data into file"
+        "Serialize object into file"
         with my_open(file_name,'wb') as fp:
             pickle.dump(obj, fp, pickle.HIGHEST_PROTOCOL)
     def load_obj(self, file_name):
-        "Read data from file"
+        "Read object from file"
         with my_open(file_name, 'rb') as fp:
             return pickle.load(fp)
+    def save_points(self,IC_id,anorexic_lambda,plan_id,scale):
+    	"Save selectivity points onto disk, cobining with previous points, and clears memory"
+    	if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
+    		prev_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
+    	else:
+    		prev_val = set()
+    	cur_val = self.[(IC_id,anorexic_lambda,plan_id,scale)]
+    	cur_val.update(prev_val)
+    	self.save_obj(   cur_val , os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  )  )
+    	self.[(IC_id,anorexic_lambda,plan_id,scale)] = set()
+    def load_points(self,IC_id,anorexic_lambda,plan_id,scale):
+    	if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
+    		old_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
+    	else:
+    		old_val = set()
+    	return old_val
 
     def save_maps(self):
         "Save present maps values into objects for repeatable execution over difference simulation"
@@ -456,7 +470,7 @@ class ScaleVariablePlanBouquet:
         self.save_obj( self.spd2c_m       , os.path.join(self.maps_dir, 'spd2c_m'   ) )
         self.save_obj( self.id2c_m        , os.path.join(self.maps_dir, 'id2c_m'    ) )
         self.save_obj( self.iad2p_m       , os.path.join(self.maps_dir, 'iad2p_m'   ) )
-        self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) )
+        # self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) )
         self.save_obj( self.d2o_m         , os.path.join(self.maps_dir, 'd2o_m'     ) )
         self.save_obj( self.dp2t_m        , os.path.join(self.maps_dir, 'dp2t_m'    ) )
         self.save_obj( self.aed2aed_m     , os.path.join(self.maps_dir, 'aed2aed_m' ) )
@@ -490,7 +504,7 @@ class ScaleVariablePlanBouquet:
             self.spd2c_m   = self.load_obj( os.path.join( self.maps_dir,'spd2c_m'   ) )
             self.id2c_m    = self.load_obj( os.path.join( self.maps_dir,'id2c_m'    ) )
             self.iad2p_m   = self.load_obj( os.path.join( self.maps_dir,'iad2p_m'   ) )
-            self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) )
+            # self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) )
             self.d2o_m     = self.load_obj( os.path.join( self.maps_dir,'d2o_m'     ) )
             self.dp2t_m    = self.load_obj( os.path.join( self.maps_dir,'dp2t_m'    ) )
             self.aed2aed_m = self.load_obj( os.path.join( self.maps_dir,'aed2aed_m' ) )
@@ -536,6 +550,10 @@ class ScaleVariablePlanBouquet:
         # Getting plans at extremas, storing them and serializing them
         plan_min_id, plan_max_id = self.store_plan( self.plan(sel_min, scale=scale) ), self.store_plan( self.plan(sel_max, scale=scale) )
         self.d2o_m[scale].update( {plan_min_id,plan_max_id} )
+        if (scale, plan_min_id) not in dp2t_m:
+            dp2t_m[(scale, plan_min_id)] = 0
+        if (scale, plan_max_id) not in dp2t_m:
+            dp2t_m[(scale, plan_max_id)] = 0
         # Setting plan entries for optimal plan at locations and cost values at those location
         self.C_min, self.C_max = self.cost(sel_min, plan_id=plan_min_id, scale=scale), self.cost(sel_max, plan_id=plan_max_id, scale=scale)
         self.sd2p_m[(sel_min,scale)], self.sd2p_m[(sel_max,scale)] = plan_min_id, plan_max_id
@@ -574,24 +592,35 @@ class ScaleVariablePlanBouquet:
             max_eating_plan_id = max( eating_capacity, key=lambda plan_id:len(eating_capacity[plan_id]) )
             reduced_plan_set.add( max_eating_plan_id )
             anorexic_max_cost = max( eating_capacity[max_eating_plan_id].values(), default=self.id2c_m[IC_id] )
-            self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)] = anorexic_max_cost / self.id2c_m[IC_id]
             points_gone = set().union( *( self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)], eating_capacity[max_eating_plan].keys() ) )
             contour_points.difference_update( points_gone )
             for plan_id in eating_capacity:
                 for sel in points_gone:
                     eating_capacity[plan_id].pop(sel,None)
-            if covering or contour_plotting:
-                self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
-            del self.iapd2s_m[ (IC_id,0.0,max_eating_plan_id,scale) ]
-        # Setting Reduced plan set & deleting previous points
+            self.obj_lock.acquire()
+            self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)] = anorexic_max_cost / self.id2c_m[IC_id]
+            self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
+            self.save_points(IC_id,0.0,                 max_eating_plan_id,scale)
+            self.save_points(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)
+            self.obj_lock.release()
+        self.obj_lock.acquire()
         self.iad2p_m[(IC_id, self.anorexic_lambda, scale)] = reduced_plan_set
-        for plan_id in (org_plans-reduced_plan_set) :
-            del self.iapd2s_m[ (IC_id,0.0,plan_id,scale) ]
-
+        for plan_id in org_plans- reduced_plan_set:
+        	self.save_points(IC_id,0.0,plan_id,scale)
+        self.obj_lock.release()
 
     def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
-        scale = scale if (scale is not None) else self.base_scale       
+        scale = scale if (scale is not None) else self.base_scale
+        '''
+        # Locating Initial Seed, Binary Search based edges selection
+        Location L(x, y) is included in the contour C if it satisfies the following conditions:
+            (a) C ≤ C_opt[L] ≤ (1 + α)C ; and
+            (b) if C_opt[L(x−1)] ≥ C and C_opt[L(y−1) ) ≥ C then C_opt[L(−1)] < C
+        # Neighborhood EXploration Using Seed (NEXUS)
+        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
+        The end of this recursive routine is marked by the non-existence of either S(x+1) or S(y−1) in the ESS grid.
+        '''
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
         lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
         for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
@@ -620,128 +649,113 @@ class ScaleVariablePlanBouquet:
         # Repeated Exponential search to find leftmost point inside [C,(1+α)C]
         v_ix = m_ix
         while True:
-	        continue_exp, exp_step = False, 1
-	        while v_ix >= exp_step:
-	            e_ix = v_ix-exp_step
-	            exp_sel_ix = ( (0,)*s + (e_ix,) + (self.resolution_p-1,)*t )
-	            exp_sel    = self.build_sel(exp_sel_ix)
-	            exp_cost   = self.cost(exp_sel, scale=scale)
+            continue_exp, exp_step = False, 1
+            while v_ix >= exp_step:
+                e_ix = v_ix-exp_step
+                exp_sel_ix = ( (0,)*s + (e_ix,) + (self.resolution_p-1,)*t )
+                exp_sel    = self.build_sel(exp_sel_ix)
+                exp_cost   = self.cost(exp_sel, scale=scale)
                 if contour_cost <= exp_cost:
-                	v_ix = e_ix
-                	exp_step *= 2 # Increase step size by 2 each time
-                	continue_exp = True # Future attempt of Exponential search
+                    v_ix = e_ix
+                    exp_step *= 2 # Increase step size by 2 each time
+                    continue_exp = True # Future attempt of Exponential search
                 else:
                     break                
-	        if not continue_exp:
-	        	break
+            if not continue_exp:
+                break
         # Initial seed value, which will explore into D-dimensional surface
         initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
         initial_seed_sel = self.build_sel(initial_seed_ix)
         initial_seed_plan_id = self.store_plan( self.plan(initial_seed_sel, scale=scale) )
-
-        self.nexus_lock = threading.Lock()
+        # Lock & local data-structures of outer function to be used
+        nexus_lock = threading.Lock()
         iad2p_m, iapd2s_m = {}, {} # Local Data Structures will be merged at end of entire contour exploration
         iad2p_m[(IC_id,0.0,scale)] = { initial_seed_plan_id }
         iapd2s_m[(IC_id,0.0,initial_seed_plan_id,scale)] = { initial_seed_sel }
-
-        '''
-        # Locating Initial Seed, Binary Search based edges selection
-        Location L(x, y) is included in the contour C if it satisfies the following conditions:
-            (a) C ≤ C_opt[L] ≤ (1 + α)C ; and
-            (b) if C_opt[L(x−1)] ≥ C and C_opt[L(y−1) ) ≥ C then C_opt[L(−1)] < C
-        # Neighborhood EXploration Using Seed (NEXUS)
-        If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
-        The end of this recursive routine is marked by the non-existence of either S(x+1) or S(y−1) in the ESS grid.
-        '''
-
-        # CHECKPOINT
         # Exploration using Initial seed in Dim dimensional space
         def exploration(self, org_seed_ix, total_dim):
-        	"Nested function for exploration using seed and contour generation"
-        	nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m
-        	if total_dim >= 1 :
-	        	dim_h = total_dim-1
-	        	cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
-	        	for dim_l in range(total_dim-1):
-	        		# (dim_l, dim_h) is dimension pair to be explored
-	        		p2s, seed_ix_ls= {}, []
-	        		# 2D exploration using initial seed
-	        		seed_ix_ls.append( tuple(cur_ix) )
-	        		while True:
-		        		x, y = cur_ix[dim_l], cur_ix[dim_h]
-				        next_ix  = cur_ix[:]
-				        next_ix[dim_h] -= 1
-				        next_sel = self.build_sel(next_ix)
-				        cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
-				        if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
-				            # S = S(x+1)
-				        	x += 1
-					        next_ix  = cur_ix[:]
-					        next_ix[dim_l] += 1
-					        next_sel = self.build_sel(next_ix)
-					        cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
-				        else:
-				        	# S = S(y−1)
-				        	y -= 1
-					    next_plan_id = self.store_plan( plan_xml )
-					    if next_plan_id in p2s:
-					    	p2s[next_plan_id].add(next_sel)
-					    else:
-					    	p2s[next_plan_id] = {next_sel}
-	        			cur_ix[dim_l], cur_ix[dim_h] = x, y
-	        			seed_ix_ls.append( tuple(cur_ix) )
-	        			if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) : # non-existence of either S(x+1) or S(y−1)
-	        				break
-	        		# First search include both ends of 2D exploration, rest will not include first end
-	        		if dim_l+1 != dim_h:
-	        			del seed_ix_ls[0]
-	        		self.nexus_lock.acquire()
-	        		iad2p_m[(IC_id,0.0,scale)].update(p2s.keys())
-	        		for plan_id in p2s:
-	        			if (IC_id,0.0,plan_id,scale) in iapd2s_m:
-	        				iapd2s_m[(IC_id,0.0,plan_id,scale)].update(p2s[plan_id])
-	        			else:
-	        				iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s[plan_id]
-	        		self.nexus_lock.release()
-	        		# For each seed generated, call (Dim-1) dimensional subproblem
-			        2d_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1)) for seed_ix in seed_ix_ls ]
-			        # All exploration are collected and waited to end outside dim_l forloop
-			        exploration_thread_ls.extend( 2d_exploration_thread_ls )
-			        # Launching construction of all Ico-cost contours
-			        for 2d_explore_thread in 2d_exploration_thread_ls:
-			            2dexplore_thread.start()
-		        # Waiting for construction of all Ico-cost contours
-		        for explore_thread in exploration_thread_ls:
-		            explore_thread.join()
+            "Nested function for exploration using seed and contour generation"
+            nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock
+            if total_dim >= 1 :
+                dim_h = total_dim-1
+                cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
+                for dim_l in range(total_dim-1):
+                    # (dim_l, dim_h) is dimension pair to be explored
+                    p2s, seed_ix_ls= {}, []
+                    # 2D exploration using initial seed
+                    seed_ix_ls.append( tuple(cur_ix) )
+                    while True:
+                        x, y = cur_ix[dim_l], cur_ix[dim_h]
+                        next_ix  = cur_ix[:]
+                        next_ix[dim_h] -= 1
+                        next_sel = self.build_sel(next_ix)
+                        cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                        if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
+                            # S = S(x+1)
+                            x += 1
+                            next_ix  = cur_ix[:]
+                            next_ix[dim_l] += 1
+                            next_sel = self.build_sel(next_ix)
+                            cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                        else:
+                            # S = S(y−1)
+                            y -= 1
+                        next_plan_id = self.store_plan( plan_xml )
+                        if next_plan_id in p2s:
+                            p2s[next_plan_id].add(next_sel)
+                        else:
+                            p2s[next_plan_id] = {next_sel}
+                        cur_ix[dim_l], cur_ix[dim_h] = x, y
+                        seed_ix_ls.append( tuple(cur_ix) )
+                        if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) : # non-existence of either S(x+1) or S(y−1)
+                            break
+                    # First search include both ends of 2D exploration, rest will not include first end
+                    if dim_l+1 != dim_h:
+                        del seed_ix_ls[0]
+                    nexus_lock.acquire()
+                    iad2p_m[(IC_id,0.0,scale)].update(p2s.keys())
+                    for plan_id in p2s:
+                        if (IC_id,0.0,plan_id,scale) in iapd2s_m:
+                            iapd2s_m[(IC_id,0.0,plan_id,scale)].update(p2s[plan_id])
+                        else:
+                            iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s[plan_id]
+                    nexus_lock.release()
+                    # For each seed generated, call (Dim-1) dimensional subproblem
+                    2d_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1,)) for seed_ix in seed_ix_ls ]
+                    # All exploration are collected and waited to end outside dim_l forloop
+                    exploration_thread_ls.extend( 2d_exploration_thread_ls )
+                    # Launching construction of all Ico-cost contours
+                    for 2d_explore_thread in 2d_exploration_thread_ls:
+                        2dexplore_thread.start()
+                # Waiting for construction of all Ico-cost contours
+                for explore_thread in exploration_thread_ls:
+                    explore_thread.join()
 
         # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
-    	self.nexus_exploration(initial_seed_ix, self.Dim)
+        self.nexus_exploration(initial_seed_ix, self.Dim)
         # Merging to Object Data-structures after exploration is complete
         self.obj_lock.acquire()
         for key in iad2p_m:
-        	self.iad2p_m[key] = iad2p_m[key]
+            self.iad2p_m[key] = iad2p_m[key]
         for key in iapd2s_m:
-        	self.iapd2s_m[key] = iapd2s_m[key]
-        self.obj_lock.release()
+            self.iapd2s_m[key] = iapd2s_m[key]
+        for plan_id in iad2p_m.values():
+            self.d2o_m[scale].add( plan_id )
+            if (scale, plan_id) not in dp2t_m:
+                dp2t_m[(scale, plan_id)] = 0
         # Map generation for CSI & Anorexic Reduction cost-multiplicity
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         for plan_id in org_plans: # Identity mapping for cost-multiplicity without ANOREXIC reduction  & CSI
             self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
+        self.obj_lock.release()
         # Calling anorexic reduction, and associated map generation
         if self.anorexic_lambda:
             self.anorexic_reduction(IC_id, scale=scale)
             reduced_plans = self.iad2p_m[(IC_id, self.anorexic_lambda, scale)]
+            self.obj_lock.acquire()
             for plan_id in reduced_plans: # Identity mapping for CSI
                 self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
-        # Deleting selectivity points if neither of CSI or Contour plotting
-        if not(covering or contour_plotting):
-            if self.anorexic_lambda:
-                for plan_id in self.iad2p_m[(IC_id, self.anorexic_lambda, scale)]:
-                    del self.iapd2s_m[(IC_id,self.anorexic_lambda,plan_id,scale)]
-            else:
-                for plan_id in self.iad2p_m[(IC_id, 0.0, scale)]:
-                    del self.iapd2s_m[(IC_id,0.0,plan_id,scale)]
-
+            self.obj_lock.release()
 
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
@@ -753,14 +767,34 @@ class ScaleVariablePlanBouquet:
             random_p_val = self.exec_specific['random_p_d']-1
         IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
         # Executing NEXUS Algorithm for multi-dimensions
-        self.obj_lock = threading.Lock()
-        nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix)) for IC_ix in IC_indices ]
+        nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
+        # Boolean indecxing to check if previous contour is explored in any past invocation
+        if 'nexus' not in self.exec_specific:
+            self.exec_specific['nexus'] = {}
+            if scale not in self.exec_specific['nexus']:
+                self.exec_specific['nexus'][scale] = {}
+                for IC_ix in IC_indices:
+                    self.exec_specific['nexus'][scale][IC_ix] = False
+
         # Launching construction of all Ico-cost contours
-        for nexus_thread in nexus_thread_ls:
-            nexus_thread.start()
+        for ix, nexus_thread in enumerate(nexus_thread_ls):
+            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+                nexus_thread.start()
         # Waiting for construction of all Ico-cost contours
         for nexus_thread in nexus_thread_ls:
-            nexus_thread.join()
+            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+                nexus_thread.join()
+                self.exec_specific['nexus'][scale][IC_indices[ix]] = True
+
+
+
+        # MCHECKPOINT
+        # Flushing selectivity points to disk, can be brought for CSI or Contour plotting
+        self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) )
+        self.iapd2s_m = {}
+        # Bringing selectivity points from disk, either for CSI or Contour plotting
+        self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) )
+
         # CSI algorithm, for further reducing effective plan density on each contour
         if covering:
             self.covering_sequence(scale=scale)
@@ -804,6 +838,7 @@ class ScaleVariablePlanBouquet:
 
     def evaluate(self, scale=None):
         "Evaluates various metrics of Native optimizer & Plan Bouquet"
+        scale = scale if (scale is not None) else self.base_scale
         pass
 
     def run(self):
