@@ -638,6 +638,8 @@ class ScaleVariablePlanBouquet:
         initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
         initial_seed_sel = self.build_sel(initial_seed_ix)
         initial_seed_plan_id = self.store_plan( self.plan(initial_seed_sel, scale=scale) )
+
+        self.nexus_lock = threading.Lock()
         iad2p_m, iapd2s_m = {}, {} # Local Data Structures will be merged at end of entire contour exploration
         iad2p_m[(IC_id,0.0,scale)] = { initial_seed_plan_id }
         iapd2s_m[(IC_id,0.0,initial_seed_plan_id,scale)] = { initial_seed_sel }
@@ -645,18 +647,75 @@ class ScaleVariablePlanBouquet:
         '''
         # Locating Initial Seed, Binary Search based edges selection
         Location L(x, y) is included in the contour C if it satisfies the following conditions:
-            (a) C ≤ C_opt[L] ≤ (1 + α)C and
-            (b) if C_opt[L(x−1)] > C and C_opt[L(y−1) ) > C then c opt (L(−1) ) < C
+            (a) C ≤ C_opt[L] ≤ (1 + α)C ; and
+            (b) if C_opt[L(x−1)] ≥ C and C_opt[L(y−1) ) ≥ C then C_opt[L(−1)] < C
         # Neighborhood EXploration Using Seed (NEXUS)
         If C_opt[(S(y−1)] < C, then set S = S(x+1) else S = S(y−1)
-        The end of this recursive routine is marked by the non-existence of both S(x+1) and S(y−1) in the ESS grid.
+        The end of this recursive routine is marked by the non-existence of either S(x+1) or S(y−1) in the ESS grid.
         '''
 
         # CHECKPOINT
         # Exploration using Initial seed in Dim dimensional space
-        pass
+        def exploration(self, org_seed_ix, total_dim):
+        	"Nested function for exploration using seed and contour generation"
+        	nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m
+        	if total_dim >= 1 :
+	        	dim_h = total_dim-1
+	        	cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
+	        	for dim_l in range(total_dim-1):
+	        		# (dim_l, dim_h) is dimension pair to be explored
+	        		p2s, seed_ix_ls= {}, []
+	        		# 2D exploration using initial seed
+	        		seed_ix_ls.append( tuple(cur_ix) )
+	        		while True:
+		        		x, y = cur_ix[dim_l], cur_ix[dim_h]
+				        next_ix  = cur_ix[:]
+				        next_ix[dim_h] -= 1
+				        next_sel = self.build_sel(next_ix)
+				        cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+				        if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
+				            # S = S(x+1)
+				        	x += 1
+					        next_ix  = cur_ix[:]
+					        next_ix[dim_l] += 1
+					        next_sel = self.build_sel(next_ix)
+					        cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+				        else:
+				        	# S = S(y−1)
+				        	y -= 1
+					    next_plan_id = self.store_plan( plan_xml )
+					    if next_plan_id in p2s:
+					    	p2s[next_plan_id].add(next_sel)
+					    else:
+					    	p2s[next_plan_id] = {next_sel}
+	        			cur_ix[dim_l], cur_ix[dim_h] = x, y
+	        			seed_ix_ls.append( tuple(cur_ix) )
+	        			if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) : # non-existence of either S(x+1) or S(y−1)
+	        				break
+	        		# First search include both ends of 2D exploration, rest will not include first end
+	        		if dim_l+1 != dim_h:
+	        			del seed_ix_ls[0]
+	        		self.nexus_lock.acquire()
+	        		iad2p_m[(IC_id,0.0,scale)].update(p2s.keys())
+	        		for plan_id in p2s:
+	        			if (IC_id,0.0,plan_id,scale) in iapd2s_m:
+	        				iapd2s_m[(IC_id,0.0,plan_id,scale)].update(p2s[plan_id])
+	        			else:
+	        				iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s[plan_id]
+	        		self.nexus_lock.release()
+	        		# For each seed generated, call (Dim-1) dimensional subproblem
+			        2d_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1)) for seed_ix in seed_ix_ls ]
+			        # All exploration are collected and waited to end outside dim_l forloop
+			        exploration_thread_ls.extend( 2d_exploration_thread_ls )
+			        # Launching construction of all Ico-cost contours
+			        for 2d_explore_thread in 2d_exploration_thread_ls:
+			            2dexplore_thread.start()
+		        # Waiting for construction of all Ico-cost contours
+		        for explore_thread in exploration_thread_ls:
+		            explore_thread.join()
 
-
+        # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
+    	self.nexus_exploration(initial_seed_ix, self.Dim)
         # Merging to Object Data-structures after exploration is complete
         self.obj_lock.acquire()
         for key in iad2p_m:
