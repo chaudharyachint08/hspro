@@ -95,74 +95,72 @@ for i in ls:
     except:
         pass
 
-######## STANDARD & THIRD PARTY LIBRARIES IMPORTS ENDS ########
-
-
-######## COMMAND LINE ARGUMENTS BEGINS ########
+######## COMMAND LINE ARGUMENTS ########
 
 parser = argparse.ArgumentParser()
-# Bool Type Arguments
-parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
-parser.add_argument("--new_info" , type=eval , dest='new_info' , default=False) # To generate new information, like plans, contours, points
-parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
-parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
-parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
-parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
-# Int Type Arguments
-parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
-parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
-parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
-parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
-parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None) # If have to round of selectivity values during computation
-# Float Type Arguments
-parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
-parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
-parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1.0, treated as epsilon in theory
-parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0)    # Maximum sel of 1.0
-parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
-parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # for q-points in discretized planes, results in surface thickening
-# String Type Arguments
-parser.add_argument("--progression" , type=str  , dest='progression' , default='AP')
-parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
-parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
-parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
-# Tuple Type Arguments
-parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100000,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(100000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
-parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
-
-args, unknown = parser.parse_known_args()
-globals().update(args.__dict__)
-
-######## COMMAND LINE ARGUMENTS ENDS ########
-
+def set_cmd_arguments():
+    "set command-line arguments"
+    # Bool Type Arguments
+    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
+    parser.add_argument("--new_info" , type=eval , dest='new_info' , default=False) # To generate new information, like plans, contours, points
+    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
+    parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
+    parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
+    parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
+    # Int Type Arguments
+    parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
+    parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
+    parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
+    parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
+    parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None) # If have to round of selectivity values during computation
+    # Float Type Arguments
+    parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
+    parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
+    parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1.0, treated as epsilon in theory
+    parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0)    # Maximum sel of 1.0
+    parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
+    parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # for q-points in discretized planes, results in surface thickening
+    # String Type Arguments
+    parser.add_argument("--progression" , type=str  , dest='progression' , default='GP')
+    parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
+    parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
+    parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
+    # Tuple Type Arguments
+    parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(1000,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
+    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
+    # Adding global vairables from received or default value
+    args, unknown = parser.parse_known_args()
+    globals().update(args.__dict__)
+set_cmd_arguments()
 
 ######## GLOBAL DATA-STRUCTURES BEGINS ########
 
-pwd = os.getcwd()
-sep = os.path.sep
-val = pwd.split(sep)
-if 'source' in val:
-    home_dir = os.path.join(*val[:-1])
-else:
-    home_dir = os.path.join(*val)
-    master_ls = master_dir.split(sep)
-    plots_ls  = plots_dir.split(sep)
-    try:
-        master_ls.remove('..')
-        plots_ls.remove('..')
-    except:
-        pass
-    master_dir = os.path.join(*master_ls)
-    plots_dir  = os.path.join(*plots_ls)
-if sep=='/':
-    home_dir = sep+home_dir
-# creating a lock for os_operations
-# os_lock = threading.Lock()
-os_lock = multiprocessing.Lock()
-# eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
-
-######## GLOBAL DATA-STRUCTURES ENDS ########
+def global_path_var():
+    "initial path variables"
+    global pwd, sep, val, home_dir, master_dir, plots_dir, os_lock
+    pwd = os.getcwd()
+    sep = os.path.sep
+    val = pwd.split(sep)
+    if 'source' in val:
+        home_dir = os.path.join(*val[:-1])
+    else:
+        home_dir = os.path.join(*val)
+        master_ls = master_dir.split(sep)
+        plots_ls  = plots_dir.split(sep)
+        try:
+            master_ls.remove('..')
+            plots_ls.remove('..')
+        except:
+            pass
+        master_dir = os.path.join(*master_ls)
+        plots_dir  = os.path.join(*plots_ls)
+    if sep=='/':
+        home_dir = sep+home_dir
+    # creating a lock for os_operations
+    os_lock = multiprocessing.Lock()
+    # eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
+global_path_var()
 
 ######## GLOBAL FUNCTIONS BEGINS ########
 
@@ -170,7 +168,6 @@ def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
     os_lock.acquire()
     print( *args, sep=sep, end=end, file=file, flush=flush)
     os_lock.release()
-
 def my_listdir(dir_path='.'):
     "Synchronization construct based listing of files in directory"
     # print(os_lock.__dict__['_semlock']._count())
@@ -187,7 +184,6 @@ def my_listdir(dir_path='.'):
     if error:
         raise FileNotFoundError(error_msg)
     return file_ls
-
 def my_open(file_path, mode='r'):
     "Synchronization construct based opening of a file"
     os_lock.acquire()
@@ -208,36 +204,51 @@ def run(object):
     "Simple Execution for PlanBouquet objects"
     object.run()
 
-######## GLOBAL FUNCTIONS ENDS ########
+######## OPERATOR & PLAN DESCRIPTION CLASS ########
 
 class OperatorNode:
-    "Node of plan, also returns string representation of plan"
-    def __init__(self,level=0,root2prv_path=[]):
-        self.root2cur_path, self.level, self.child_obj_ls = level, root2prv_path+[level,], []
-        self.node_detail = {}
-
-    def feed(self):
-        "Feed information into present node"
-        pass
-
-    def json_to_tree(self):
-        "Upon passing head of JSON of Plan constructed from XML, will return root of tree"
-        pass
-
+    "Node of plan operator class, from which tree can be searched"
+    def __init__(self, json_obj, level=0, root2prv_path=[]):
+        "Handles feeding of detail of operator node, and recursive construction of plan tree"
+        self.level, self.root2cur_path, self.child_obj_ls, self.node_detail = level, root2prv_path+[level,], [], {}
+        self.skip_keys = { 'Plans', 'Startup-Cost', 'Total-Cost', 'Plan-Rows' }
+        self.node_detail.update({ key:json_obj[key] for key in json_obj if (key not in self.skip_keys)  })
+        if ('Plans' in json_obj) and ('Plan' in json_obj['Plans']) :
+            if type(json_obj['Plans']['Plan']) not in (list, tuple):
+                json_obj['Plans']['Plan'] = [ json_obj['Plans']['Plan'] ]
+            for sub_json_obj in json_obj['Plans']['Plan']:
+                self.child_obj_ls.append( OperatorNode(sub_json_obj, self.level+1, self.root2cur_path) )
+    def __eq__(self, obj):
+        "Overloading == operator for plan tree object"
+        if set(self.node_detail.keys()) != set(self.node_detail.keys()):
+            return False
+        else:
+            for key in self.node_detail:
+                if self.node_detail[key] != obj.node_detail[key]:
+                    return False
+            if len(self.child_obj_ls) != len(obj.child_obj_ls):
+                return False
+            for child_self, child_obj in zip(self.child_obj_ls, obj.child_obj_ls):
+                if child_self != child_obj :
+                    return False
+            else:
+                True
     def node_to_str(self):
-        node_string = 'node_string'
-        return str((self.root2cur_path,node_string))
-
+        "Converting detail of operator node into string"
+        node_string = str({ key:self.node_detail[key] for key in sorted(self.node_detail) })
+        return '\t'*self.level + str((self.root2cur_path,node_string))
     def tree_to_str(self):
-        return self.node_to_str()+'->'+'['+'$'.join((child_obj.node_to_str() for child_obj in self.child_obj_ls))+']'
+        "Converting detail of plan tree, operator wise into string, which can be pretty printed"
+        if len(self.child_obj_ls):
+            return self.node_to_str() + '\n'+ '\t'*self.level +'--> [\n' + '\n'.join((child_obj.tree_to_str() for child_obj in self.child_obj_ls)) + '\n' + '\t'*self.level +']'
+        else:
+            return self.node_to_str()
 
-    def __eq__(self,obj):
-        pass
-
-
+######## SCALABLE PLAN BOUQUET CLASS ########
 
 class ScaleVariablePlanBouquet:
-    ""
+    "Plan Bouquet class"
+
     def __init__(self, benchmark, query_id, base_scale, exec_scale, db_scales, stderr):
         "Instance initializer: query_id is name of query file, which is same as ID of epp file also"
         self.benchmark, self.query_id, self.base_scale, self.exec_scale, self.db_scales, self.stderr = benchmark, query_id, base_scale, exec_scale, db_scales, stderr
@@ -288,46 +299,6 @@ class ScaleVariablePlanBouquet:
         self.aed2aed_m = {} # (anorexic_lambda, IC_id, plan_id, scale) useful for CSI Algorithms storage, checking if that execution has already occured in lower IC-contours
         self.aed2m_m   = {} # (anorexic_lambda, IC_id, plan_id, scale) : multiplicity introduced due to anorexic reduction
 
-
-    ######## PLAN PROCESSING, SAVING & LOADING METHODS ########
-    # CHECKPOINT
-    def plan_serial_helper(self, json_obj):
-        "Recursive helper function for plan_serial, build (pre-order + child_level + child_ix) detail of plan"
-        plan_string = ''
-        if "Plan" in json_obj:
-            # CHECKPOINT : write code here for each Node-Type and corresponding attributes
-            pass
-        if "Plans" in json_obj:
-            if "Plan" in json_obj["Plans"]:
-                if type(json_obj["Plans"]["Plan"])==list:
-                    for sub_plan in json_obj["Plans"]["Plan"]:
-                        plan_string = ' $ '.join(( plan_string, self.plan_serial_helper(sub_plan) ))
-                else:
-                    sub_plan = json_obj["Plans"]["Plan"]
-                    plan_string = ' $ '.join(( plan_string, self.plan_serial_helper(sub_plan) ))
-        return plan_string
-    def plan_serial(self, xml_string):
-        "Parsing function to convert plan object (XML/JSON) in to a string"
-        json_obj = pf.xml2json(xml_string, mode='string')
-        plan_string = self.plan_serial_helper( json_obj["QUERY PLAN"][0] )        
-        return plan_string
-    def store_plan(self, xml_string): # return self.r2p_m[plan_serial]
-        "Method to store XML & JSON variants on plans in respective directories, return plan_id"
-        plan_serial = self.plan_serial(xml_string)
-        if plan_serial not in r2p_m:
-            xml_plan_path  = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','xml',  self.query_id)
-            json_plan_path = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','json', self.query_id)
-            if not os.path.isdir(xml_plan_path):
-                os.makedirs(xml_plan_path)
-            if not os.path.isdir(json_plan_path):
-                os.makedirs(json_plan_path)
-            plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
-            with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
-                f.write( xml_string )
-            self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
-            self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
-        return self.r2p_m[plan_serial]
-
     ######## DATA-BASE CONNECTION METHODS ########
     
     def get_cost_and_plan(self, sel, plan_id=None, scale=None): # return (result_cost, result_plan)
@@ -376,10 +347,30 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan_id, scale) not in self.spd2c_m:
             cost_val, _ = self.get_cost_and_plan(sel, plan_id=plan_id, scale=scale)
-            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val             # Exponential Storage of |POSP|*RED**dim(EPP)
+            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val         # Exponential Storage of |POSP|*RED**dim(EPP)
         else:
             cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
         return cost_val
+
+    ######## PLAN PROCESSING, SAVING & LOADING METHOD USING OperatorNode CLASS ########
+
+    def store_plan(self, xml_string): # return self.r2p_m[plan_serial]
+        "Method to store XML & JSON variants on plans in respective directories, return plan_id"
+        json_obj = pf.xml2json(xml_string, mode='string')
+        plan_serial = OperatorNode(json_obj['QUERY PLAN'][0]['Plan']).tree_to_str()
+        if plan_serial not in r2p_m:
+            xml_plan_path  = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','xml',  self.query_id)
+            json_plan_path = os.path.join( *home_dir,*master_dir,self.benchmark,'plans','json', self.query_id)
+            if not os.path.isdir(xml_plan_path):
+                os.makedirs(xml_plan_path)
+            if not os.path.isdir(json_plan_path):
+                os.makedirs(json_plan_path)
+            plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
+            with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
+                f.write( xml_string )
+            self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
+            self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
+        return self.r2p_m[plan_serial]
 
     ######## PERFORMANCE METRICS METHODS ########
 
@@ -441,27 +432,26 @@ class ScaleVariablePlanBouquet:
         with my_open(file_name, 'rb') as fp:
             return pickle.load(fp)
     def save_points(self,IC_id,anorexic_lambda,plan_id,scale):
-    	"Save selectivity points onto disk, cobining with previous points, and clears memory"
-    	if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
-    		prev_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
-    	else:
-    		prev_val = set()
-    	cur_val = self.[(IC_id,anorexic_lambda,plan_id,scale)]
-    	cur_val.update(prev_val)
-    	self.save_obj(   cur_val , os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  )  )
-    	self.[(IC_id,anorexic_lambda,plan_id,scale)] = set()
+        "Save selectivity points onto disk, cobining with previous points, and clears memory"
+        if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
+            prev_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
+        else:
+            prev_val = set()
+        cur_val = self.iapd2s_m[(IC_id,anorexic_lambda,plan_id,scale)]
+        cur_val.update(prev_val)
+        self.save_obj(   cur_val , os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  )  )
+        self.iapd2s_m[(IC_id,anorexic_lambda,plan_id,scale)] = set()
     def load_points(self,IC_id,anorexic_lambda,plan_id,scale):
-    	if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
-    		old_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
-    	else:
-    		old_val = set()
-    	return old_val
+        if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
+            old_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
+        else:
+            old_val = set()
+        return old_val
 
     def save_maps(self):
         "Save present maps values into objects for repeatable execution over difference simulation"
         if not os.path.isdir(self.maps_dir):
             os.makedirs(self.maps_dir)
-
         self.save_obj( self.exec_specific , os.path.join(self.maps_dir, 'exec_specific' ) )
         self.save_obj( self.p2f_m         , os.path.join(self.maps_dir, 'p2f_m'     ) )
         self.save_obj( self.f2r_m         , os.path.join(self.maps_dir, 'f2r_m'     ) )
@@ -475,12 +465,10 @@ class ScaleVariablePlanBouquet:
         self.save_obj( self.dp2t_m        , os.path.join(self.maps_dir, 'dp2t_m'    ) )
         self.save_obj( self.aed2aed_m     , os.path.join(self.maps_dir, 'aed2aed_m' ) )
         self.save_obj( self.aed2m_m       , os.path.join(self.maps_dir, 'aed2m_m'   ) )
-
     def reindex(self, old_random_p_d, new_random_p_d):
         "Fucntion for changing Indexes for Iso-cost contours, after different loading"
         incr_ratio = (new_random_p_d//old_random_p_d)
         remap = { x:((x+1)*incr_ratio-1) for x in range(old_random_p_d*self.IC_count) }
-
     def remap(self, old_map, reindex_m, re_ix=0, both_side=False):
         "Changing map keys, for re-indexing of Iso-cost contours"
         new_map = {}
@@ -493,7 +481,6 @@ class ScaleVariablePlanBouquet:
                 old_val = ((*old_map[key][:re_ix],reindex_m[old_map[key]],*old_map[key][re_ix+1:]) if tuple_mode_v else reindex_m[old_map[key]])
             new_map[ ((*key[:re_ix],reindex_m[key],*key[re_ix+1:]) if tuple_mode_k else reindex_m[key]) ] = old_val
         return new_map
-
     def load_maps(self):
         "Loads previous maps values into objects for repeatable execution over difference simulation"
         if os.path.isdir(self.maps_dir):
@@ -523,7 +510,7 @@ class ScaleVariablePlanBouquet:
 
     def build_posp(self, scale=None):
         "Optimal plans over ESS, exponential time, bouquet plans also added during compilation"
-        scale = scale if (scale is not None) else self.base_scale        
+        scale = scale if (scale is not None) else self.base_scale
         if scale not in self.d2o_m:
             self.d2o_m[scale] = set()
         for sel in itertools.product(*[ sel_range_o[self.Dim] ]*self.Dim):
@@ -532,14 +519,13 @@ class ScaleVariablePlanBouquet:
             if (scale, plan_id) not in dp2t_m:
                 dp2t_m[(scale, plan_id)] = 0
             dp2t_m[(scale, plan_id)] += 1
-
+        self.exec_specific['build_posp'] = True
     def build_sel(self, sel_ix_ls, mode='p'):
         "builds selectivity point in ESS from index of points in ESS, this should be made inline later"
         if   mode=='p':
             return tuple( (self.sel_range_p_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_p_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
         elif mode=='o':
             return tuple( (self.sel_range_o_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_o_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
-
     def base_gen(self, scale=None):
         "Step 0: Find cost values for each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -567,14 +553,16 @@ class ScaleVariablePlanBouquet:
         # Below steps are to be done using NEXUS for other than last contours
         self.iad2p_m[(self.random_p_IC_count-1,0.0,scale)]         = { plan_max_id }
         self.ipd2s_m[(self.random_p_IC_count-1,plan_max_id,scale)] = { sel_max }
-
+        self.exec_specific['base_gen'] = True
     def anorexic_reduction(self, IC_id, scale=None):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         # Identity mapping for CSI with ANOREXIC reduction
+        self.obj_lock.acquire()
         for plan_id in org_plans: 
             self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
+        self.obj_lock.release()
         # Finding all points the are on present contour
         contour_points = set().union( *(self.iapd2s_m[(IC_id,0.0,plan_id,scale)] for plan_id in org_plans) )
         # Finding inital eating capacity with Anorexic reduction threshold (1+self.anorexic_lambda)
@@ -606,9 +594,8 @@ class ScaleVariablePlanBouquet:
         self.obj_lock.acquire()
         self.iad2p_m[(IC_id, self.anorexic_lambda, scale)] = reduced_plan_set
         for plan_id in org_plans- reduced_plan_set:
-        	self.save_points(IC_id,0.0,plan_id,scale)
+            self.save_points(IC_id,0.0,plan_id,scale)
         self.obj_lock.release()
-
     def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -721,18 +708,18 @@ class ScaleVariablePlanBouquet:
                             iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s[plan_id]
                     nexus_lock.release()
                     # For each seed generated, call (Dim-1) dimensional subproblem
-                    2d_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1,)) for seed_ix in seed_ix_ls ]
+                    d2_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1,)) for seed_ix in seed_ix_ls ]
                     # All exploration are collected and waited to end outside dim_l forloop
-                    exploration_thread_ls.extend( 2d_exploration_thread_ls )
+                    exploration_thread_ls.extend( d2_exploration_thread_ls )
                     # Launching construction of all Ico-cost contours
-                    for 2d_explore_thread in 2d_exploration_thread_ls:
-                        2dexplore_thread.start()
+                    for d2_explore_thread in d2_exploration_thread_ls:
+                        d2_explore_thread.start()
                 # Waiting for construction of all Ico-cost contours
                 for explore_thread in exploration_thread_ls:
                     explore_thread.join()
 
         # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
-        self.nexus_exploration(initial_seed_ix, self.Dim)
+        self.exploration(initial_seed_ix, self.Dim)
         # Merging to Object Data-structures after exploration is complete
         self.obj_lock.acquire()
         for key in iad2p_m:
@@ -756,7 +743,11 @@ class ScaleVariablePlanBouquet:
             for plan_id in reduced_plans: # Identity mapping for CSI
                 self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
             self.obj_lock.release()
-
+        else:
+            self.obj_lock.acquire()
+            for plan_id in self.iad2p_m[(IC_id, 0.0, scale)]:
+                self.save_points(IC_id,0.0,plan_id,scale)
+            self.obj_lock.release()
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
         scale = scale if (scale is not None) else self.base_scale
@@ -785,20 +776,9 @@ class ScaleVariablePlanBouquet:
             if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
                 nexus_thread.join()
                 self.exec_specific['nexus'][scale][IC_indices[ix]] = True
-
-
-
-        # MCHECKPOINT
-        # Flushing selectivity points to disk, can be brought for CSI or Contour plotting
-        self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) )
-        self.iapd2s_m = {}
-        # Bringing selectivity points from disk, either for CSI or Contour plotting
-        self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) )
-
         # CSI algorithm, for further reducing effective plan density on each contour
         if covering:
             self.covering_sequence(scale=scale)
-
         # Building Boolean array for each execution only once, in case of covering
         zagged_bool = {}
         for IC_ix in IC_indices:
@@ -835,24 +815,31 @@ class ScaleVariablePlanBouquet:
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
             simulation_result['MSO'] = max( simulation_result['MSO_k'].values() )
         return simulation_result
-
-    def evaluate(self, scale=None):
+    def evaluate(self, mode='p', scale=None):
         "Evaluates various metrics of Native optimizer & Plan Bouquet"
         scale = scale if (scale is not None) else self.base_scale
-        pass
-
+        if   mode=='p': # Evaluating Plan Bouquet
+            MSO, ASO, MH = self.MaxSubOpt(scale,bouquet=True), self.AvgSubOpt(scale,bouquet=True), self.MaxHarm(scale)
+        elif mode=='o': # Evaluating Native Optimizer
+            if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
+                self.exec_specific['build_posp'] = False
+                self.build_posp(scale)
+            MSO, ASO, MH = self.MaxSubOpt(scale,bouquet=False), self.AvgSubOpt(scale,bouquet=False), None
+        print('Evaluation of {} is'.format('Plan Bouquet' if mode=='p' else 'Native Optimizer'))
+        print(('MSO',MSO),('ASO',ASO),sep='\n')
+        if MH is not None:
+            print('MH',MH)
     def run(self):
-        "Method to"
+        "Method to Combine, Simulate and Evaluate Plan Bouquet"
         if self.bouquet_runnable:
             if scale not in self.exec_specific:
                 self.exec_specific[scale] = {}
             self.load_maps()
             try:
-                self.base_gen( scale=self.base_scale )
-                simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
-                # Add plans discovered duing bouquet also in POSP set, optional
-                pass
-                self.build_posp( scale=self.base_scale )
+                if ('base_gen' not in self.exec_specific) or (not self.exec_specific['base_gen']):
+                    self.exec_specific['base_gen'] = False
+                    self.base_gen( scale=self.base_scale )
+                self.simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
             except:
                 pass
             else:
@@ -860,8 +847,6 @@ class ScaleVariablePlanBouquet:
             finally:
                 self.save_maps()
                 self.evaluate()
-
-
 
     def product_cover(self, sel_1, sel_2, dual=False):
         "Check if either of points in ESS covers each other, +ve if in ascending order"
@@ -917,11 +902,9 @@ class ScaleVariablePlanBouquet:
 
 
 
-
 '######## MAIN EXECUTION ########'
 
 if __name__=='__main__':
-
     # Creating values of selectivities on each axis to be varied (keyed(indexed) from 1, as Dimensions can't start from 0)
     sel_range_o, sel_range_p = {}, {}
     for ix in range(max(len(resolution_o),len(resolution_p))):
