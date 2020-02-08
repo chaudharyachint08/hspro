@@ -83,8 +83,9 @@ import plan_format as pf
 
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 # Importing Standard Data Science & Deep Learning Libraries
-ls = [('matplotlib','mpl'),('matplotlib.pyplot','plt'),('seaborn','sns'),
-    ('numpy','np'),'scipy',    'sklearn',
+
+ls = [('matplotlib','mpl'),('matplotlib.pyplot','plt'),('matplotlib.colors','mcolors'),('seaborn','sns'),
+    ('numpy','np'), ('pandas','pd'), 'scipy',    'sklearn',
     ('tensorflow','tf'),'h5py','keras']
 for i in ls:
     if not isinstance(i,tuple):
@@ -94,6 +95,11 @@ for i in ls:
         exec('print("Version of {0}",{1}.__version__)'.format(i[0],i[-1]))
     except:
         pass
+# This import registers the 3D projection, but is otherwise unused.
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 ######## COMMAND LINE ARGUMENTS ########
 
@@ -113,6 +119,7 @@ def set_cmd_arguments():
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
     parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
     parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=None) # If have to round of selectivity values during computation
+    parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # If have to round of selectivity values during computation
     # Float Type Arguments
     parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
     parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
@@ -128,11 +135,14 @@ def set_cmd_arguments():
     # Tuple Type Arguments
     parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(1000,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
     parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
-    parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,20,30,40,50,75,100,125,150,200,250))
+    parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
     globals().update(args.__dict__)
 set_cmd_arguments()
+
+if font_size is not None:
+    plt.rcParams.update({'font.size': font_size})
 
 ######## GLOBAL DATA-STRUCTURES BEGINS ########
 
@@ -208,16 +218,16 @@ def run(object):
 
 class OperatorNode:
     "Node of plan operator class, from which tree can be searched"
-    def __init__(self, json_obj, level=0, root2prv_path=[]):
+    def __init__(self, json_obj, level=0, child_ix=0, root2prv_path=[]):
         "Handles feeding of detail of operator node, and recursive construction of plan tree"
-        self.level, self.root2cur_path, self.child_obj_ls, self.node_detail = level, root2prv_path+[level,], [], {}
+        self.level, self.child_ix, self.root2cur_path, self.child_obj_ls, self.node_detail = level, child_ix, root2prv_path+[(level,child_ix),], [], {}
         self.skip_keys = { 'Plans', 'Startup-Cost', 'Total-Cost', 'Plan-Rows' }
         self.node_detail.update({ key:json_obj[key] for key in json_obj if (key not in self.skip_keys)  })
         if ('Plans' in json_obj) and ('Plan' in json_obj['Plans']) :
             if type(json_obj['Plans']['Plan']) not in (list, tuple):
                 json_obj['Plans']['Plan'] = [ json_obj['Plans']['Plan'] ]
-            for sub_json_obj in json_obj['Plans']['Plan']:
-                self.child_obj_ls.append( OperatorNode(sub_json_obj, self.level+1, self.root2cur_path) )
+            for sub_ix, sub_json_obj in enumerate(json_obj['Plans']['Plan']):
+                self.child_obj_ls.append( OperatorNode(sub_json_obj, self.level+1, sub_ix, self.root2cur_path) )
     def __eq__(self, obj):
         "Overloading == operator for plan tree object"
         if set(self.node_detail.keys()) != set(self.node_detail.keys()):
@@ -236,11 +246,11 @@ class OperatorNode:
     def node_to_str(self):
         "Converting detail of operator node into string"
         node_string = str({ key:self.node_detail[key] for key in sorted(self.node_detail) })
-        return '\t'*self.level + str((self.root2cur_path,node_string))
+        return '\t'*self.level + str(self.root2cur_path) + '\n' + '\t'*self.level + node_string
     def tree_to_str(self):
         "Converting detail of plan tree, operator wise into string, which can be pretty printed"
         if len(self.child_obj_ls):
-            return self.node_to_str() + '\n'+ '\t'*self.level +'--> [\n' + '\n'.join((child_obj.tree_to_str() for child_obj in self.child_obj_ls)) + '\n' + '\t'*self.level +']'
+            return self.node_to_str() + '\n'+ '\t'*self.level +'-->[\n' + '\n'.join((child_obj.tree_to_str() for child_obj in self.child_obj_ls)) + '\n' + '\t'*self.level +'<--]'
         else:
             return self.node_to_str()
 
@@ -252,7 +262,8 @@ class ScaleVariablePlanBouquet:
     def __init__(self, benchmark, query_id, base_scale, exec_scale, db_scales, stderr):
         "Instance initializer: query_id is name of query file, which is same as ID of epp file also"
         self.benchmark, self.query_id, self.base_scale, self.exec_scale, self.db_scales, self.stderr = benchmark, query_id, base_scale, exec_scale, db_scales, stderr
-        self.maps_dir = os.path.join(master_dir,self.benchmark,'maps','{}'.format(self.query_id))
+        self.maps_dir  = os.path.join( master_dir,self.benchmark,'maps',  '{}'.format(self.query_id) )
+        self.plots_dir = os.path.join( master_dir,self.benchmark,'plots', '{}'.format(self.query_id) )
         with my_open(os.path.join(home_dir,master_dir,self.benchmark,'sql','{}.sql'.format(query_id))) as f:
             self.query = f.read().strip()
         try:
@@ -668,7 +679,7 @@ class ScaleVariablePlanBouquet:
                 cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
                 for dim_l in range(total_dim-1):
                     # (dim_l, dim_h) is dimension pair to be explored
-                    p2s, seed_ix_ls= {}, []
+                    p2s_m, seed_ix_ls= {}, []
                     # 2D exploration using initial seed
                     seed_ix_ls.append( tuple(cur_ix) )
                     while True:
@@ -688,10 +699,10 @@ class ScaleVariablePlanBouquet:
                             # S = S(y−1)
                             y -= 1
                         next_plan_id = self.store_plan( plan_xml )
-                        if next_plan_id in p2s:
-                            p2s[next_plan_id].add(next_sel)
+                        if next_plan_id in p2s_m:
+                            p2s_m[next_plan_id].add(next_sel)
                         else:
-                            p2s[next_plan_id] = {next_sel}
+                            p2s_m[next_plan_id] = {next_sel}
                         cur_ix[dim_l], cur_ix[dim_h] = x, y
                         seed_ix_ls.append( tuple(cur_ix) )
                         if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) : # non-existence of either S(x+1) or S(y−1)
@@ -700,12 +711,12 @@ class ScaleVariablePlanBouquet:
                     if dim_l+1 != dim_h:
                         del seed_ix_ls[0]
                     nexus_lock.acquire()
-                    iad2p_m[(IC_id,0.0,scale)].update(p2s.keys())
-                    for plan_id in p2s:
+                    iad2p_m[(IC_id,0.0,scale)].update(p2s_m.keys())
+                    for plan_id in p2s_m:
                         if (IC_id,0.0,plan_id,scale) in iapd2s_m:
-                            iapd2s_m[(IC_id,0.0,plan_id,scale)].update(p2s[plan_id])
+                            iapd2s_m[(IC_id,0.0,plan_id,scale)].update(p2s_m[plan_id])
                         else:
-                            iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s[plan_id]
+                            iapd2s_m[(IC_id,0.0,plan_id,scale)] = p2s_m[plan_id]
                     nexus_lock.release()
                     # For each seed generated, call (Dim-1) dimensional subproblem
                     d2_exploration_thread_ls = [ threading.Thread(target=self.exploration,args=(seed_ix,total_dim-1,)) for seed_ix in seed_ix_ls ]
@@ -751,7 +762,29 @@ class ScaleVariablePlanBouquet:
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
         scale = scale if (scale is not None) else self.base_scale
-        # Randomly of Deterministicly selecting set of contours to be considered in plan bouquet
+        # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
+        random_p_val = self.exec_specific['random_p_d']-1
+        IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
+        # Executing NEXUS Algorithm for multi-dimensions
+        nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
+        # Boolean indecxing to check if previous contour is explored in any past invocation
+        if 'nexus' not in self.exec_specific:
+            self.exec_specific['nexus'] = {}
+        if scale not in self.exec_specific['nexus']:
+            self.exec_specific['nexus'][scale] = {}
+        for IC_ix in IC_indices:
+        	if IC_ix not in self.exec_specific['nexus'][scale]:
+                self.exec_specific['nexus'][scale][IC_ix] = False
+        # Launching construction of all Ico-cost contours
+        for ix, nexus_thread in enumerate(nexus_thread_ls):
+            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+                nexus_thread.start()
+        # Waiting for construction of all Ico-cost contours
+        for nexus_thread in nexus_thread_ls:
+            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+                nexus_thread.join()
+                self.exec_specific['nexus'][scale][IC_indices[ix]] = True
+        # Randomly or Deterministicly selecting set of contours to be considered in plan bouquet
         if random_p:
             random_p_val = np.random.randint(self.exec_specific['random_p_d'])
         else:
@@ -760,13 +793,9 @@ class ScaleVariablePlanBouquet:
         # Executing NEXUS Algorithm for multi-dimensions
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
         # Boolean indecxing to check if previous contour is explored in any past invocation
-        if 'nexus' not in self.exec_specific:
-            self.exec_specific['nexus'] = {}
-            if scale not in self.exec_specific['nexus']:
-                self.exec_specific['nexus'][scale] = {}
-                for IC_ix in IC_indices:
-                    self.exec_specific['nexus'][scale][IC_ix] = False
-
+        for IC_ix in IC_indices:
+        	if IC_ix not in self.exec_specific['nexus'][scale]:
+                self.exec_specific['nexus'][scale][IC_ix] = False
         # Launching construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
@@ -829,6 +858,87 @@ class ScaleVariablePlanBouquet:
         print(('MSO',MSO),('ASO',ASO),sep='\n')
         if MH is not None:
             print('MH',MH)
+
+    # CHECKPOINT
+    def plot_contours(self, do_posp= False, scale=None):
+        "Plotting iso-cost contours up to 3 dimensions"
+        scale = scale if (scale is not None) else self.base_scale
+        if not os.path.isdir( self.plots_dir ):
+        	os.makedirs( self.plots_dir )
+        if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
+            random_p_val = self.exec_specific['random_p_d']-1
+            IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
+
+            if   self.Dim == 1:
+            	plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical line at 1.0 selectivity
+            	p2h_m = {} # Plan_id to plot_handle mapping
+            	cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y',linestyle='--')
+            	for IC_ix in IC_indices:
+            		contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k',linestyle='--')
+            		for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
+            			self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
+            			X = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)])[0][0] , )
+            			Y = ( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) , )
+            			self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = set()
+            			plan_handle = plt.scatter( X , Y, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
+            			p2h_m[plan_id] = plan_handle
+        		X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
+        		# Y_tck = self.sel_range_o_inc if self.epp_dir[1]>0 else self.sel_range_o_dec
+        		# mX, mY = np.meshgrid(X_tck, Y_tck)
+            	if do_posp:
+    	            if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
+		                self.exec_specific['build_posp'] = False
+		                self.build_posp(scale)
+	            	p2cl_m = {} # Cost list for entire selectivity space for each plan stored here
+	            	# Finding Plan Diagram of optimal plans at each location in ESS
+	            	ess_plan_diagram, ess_plan_cost = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
+	            	for plan_id in self.d2o_m[scale]:
+	            		p2cl_m[plan_id] = np.zeros((self.resolution_o,)*self.Dim)
+	            		epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
+		            	for sel_ix_ls in epp_iterator:
+		            		sel = self.build_sel(sel_ix_ls, mode='o')
+	            			cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
+	            			p2cl_m[plan_id][sel_ix_ls[0]] = cost_val
+	            			if cost_val < ess_plan_cost[sel_ix_ls[0]]:
+	            				ess_plan_diagram[sel_ix_ls[0]] = plan_id
+	            		plan_handle = plt.plot( X_tck , p2cl_m[plan_id] , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
+            			p2h_m[plan_id]  = plan_handle
+            			del p2cl_m[plan_id]
+    			plt.xticks(X_tck) # ; plt.yticks(Y_tck)
+				plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )            			
+				plt.xlim(0.0, 1.0) # ; plt.ylim(0.0, 1.0)
+				plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
+				plt.ylabel( 'Cost (log-scale)')
+				plt.grid(True)
+				plt.savefig( '1D {} {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+				# plt.show()
+
+
+
+
+
+            elif self.Dim == 2:
+            	if not do_posp: # Created 2D plot
+            		plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
+            		plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
+            	else:
+            		pass
+
+
+				plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
+				plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  ) ; plt.ylabel( '\n'.join(('Selectivity',self.epp[1]))  )
+
+				if do_posp:
+					plt.zlabel( 'Cost (log-scale)')
+				else:
+					plt.grid(True)
+				
+				plt.savefig( '2D {} {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+				plt.show()            		
+
+            elif self.Dim == 3:
+            	pass
+
     def run(self):
         "Method to Combine, Simulate and Evaluate Plan Bouquet"
         if self.bouquet_runnable:
