@@ -112,7 +112,7 @@ def set_cmd_arguments():
     # Bool Type Arguments
     parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
     parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True) # To generate new information, like plans, contours, points
-    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
+    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=True) # If to use Anorexic Reduction Heuristic
     parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
@@ -136,7 +136,7 @@ def set_cmd_arguments():
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
     parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
     # Tuple Type Arguments
-    parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(10,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
+    parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
     parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
     parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
@@ -541,8 +541,8 @@ class ScaleVariablePlanBouquet:
         if new_info:
             try:
                 shutil.rmtree(self.maps_dir)
-                os.path.join( home_dir,master_dir,self.benchmark,'plans','xml',  self.query_id)
-                os.path.join( home_dir,master_dir,self.benchmark,'plans','json', self.query_id)
+                shutil.rmtree( os.path.join( home_dir,master_dir,self.benchmark,'plans','xml',  self.query_id) )
+                shutil.rmtree( os.path.join( home_dir,master_dir,self.benchmark,'plans','json', self.query_id) )
             except:
                 pass
         if not os.path.isdir( self.maps_dir ):
@@ -561,7 +561,7 @@ class ScaleVariablePlanBouquet:
             self.aed2aed_m = self.load_obj( os.path.join( self.maps_dir,'aed2aed_m' ) )
             self.aed2m_m   = self.load_obj( os.path.join( self.maps_dir,'aed2m_m'   ) )
 
-            exec_specific = self.load_dict( os.path.join( self.maps_dir,'exec_specific' ) )
+            exec_specific = self.load_obj( os.path.join( self.maps_dir,'exec_specific' ) )
             if self.exec_specific['random_p_d'] != exec_specific['random_p_d']:
                 old_val = exec_specific['random_p_d']
                 new_val = (self.exec_specific['random_p_d']*exec_specific['random_p_d']) // math.gcd(self.exec_specific['random_p_d'],exec_specific['random_p_d'])
@@ -578,12 +578,17 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         if scale not in self.d2o_m:
             self.d2o_m[scale] = set()
+        # count = 0
         for sel in itertools.product(*[ sel_range_o[self.Dim] ]*self.Dim):
-            plan_id = self.store_plan( self.plan(self, scale=scale) )
+            # print('Pre-store')
+            plan_id = self.store_plan( self.plan(sel, scale=scale) )
+            # print('Post-store')
             self.d2o_m[scale].add( plan_id )
             if (scale, plan_id) not in self.dp2t_m:
                 self.dp2t_m[(scale, plan_id)] = 0
             self.dp2t_m[(scale, plan_id)] += 1
+            # count += 1
+            # print(count)
         self.exec_specific['build_posp'] = True
 
     def build_sel(self, sel_ix_ls, mode='p'):
@@ -642,21 +647,21 @@ class ScaleVariablePlanBouquet:
             eating_capacity[plan_id] = {}
             for sel in non_optimal_points:
                 cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
-                if cost_val <= self.id2c_m[IC_id]*(1+self.anorexic_lambda):
+                if cost_val <= self.id2c_m[(IC_id,scale)]*(1+self.anorexic_lambda):
                     eating_capacity[plan_id][sel] = cost_val
         # Greedy Anorexic reduction algorithm as per Thesis of C.Rajmohan
         reduced_plan_set = set()
         while contour_points:
             max_eating_plan_id = max( eating_capacity, key=lambda plan_id:len(eating_capacity[plan_id]) )
             reduced_plan_set.add( max_eating_plan_id )
-            anorexic_max_cost = max( eating_capacity[max_eating_plan_id].values(), default=self.id2c_m[IC_id] )
-            points_gone = set().union( *( self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)], eating_capacity[max_eating_plan].keys() ) )
+            anorexic_max_cost = max( eating_capacity[max_eating_plan_id].values(), default=self.id2c_m[(IC_id,scale)] )
+            points_gone = set().union( *( self.iapd2s_m[(IC_id,0.0,max_eating_plan_id,scale)], eating_capacity[max_eating_plan_id].keys() ) )
             contour_points.difference_update( points_gone )
             for plan_id in eating_capacity:
                 for sel in points_gone:
                     eating_capacity[plan_id].pop(sel,None)
             self.obj_lock.acquire()
-            self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)] = anorexic_max_cost / self.id2c_m[IC_id]
+            self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)]  = anorexic_max_cost / self.id2c_m[(IC_id,scale)]
             self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
             self.save_points(IC_id,0.0,                 max_eating_plan_id,scale)
             self.save_points(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)
@@ -939,16 +944,18 @@ class ScaleVariablePlanBouquet:
             random_p_val = self.exec_specific['random_p_d']-1
             IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
             if   self.Dim == 1:
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
                 plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical line at 1.0 selectivity
                 p2h_m = {} # Plan_id to plot_handle mapping
                 X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
-                cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y', linestyle='--' )
+                cmin_handle = plt.axhline( self.C_min ,xmin=0.0, xmax=1.0, color='y', linestyle='--' )
                 for IC_ix in IC_indices:
-                    contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k', linestyle='--' )
+                    contours_handle = plt.axhline( self.id2c_m[(IC_ix, scale)] ,xmin=0.0, xmax=1.0,color='k', linestyle='--' )
                     for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
                         self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
-                        X_ls = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)])[0][0] , )
-                        Y_ls = ( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) , )
+                        X_ls = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)]) [0][0] , )
+                        Y_ls = ( self.id2c_m[(IC_ix, scale)] , )
                         self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = set()
                         plan_handle = plt.scatter( X_ls , Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                         p2h_m[plan_id] = plan_handle
@@ -962,7 +969,7 @@ class ScaleVariablePlanBouquet:
                     for plan_id in self.d2o_m[scale]:
                         p2cl_m[plan_id] = np.zeros((self.resolution_o,)*self.Dim)
                         epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
-                        for sel_ix_ls in epp_iterator:
+                        for sel_ix_ls in epp_ix_iterator:
                             sel = self.build_sel(sel_ix_ls, mode='o')
                             cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
                             p2cl_m[plan_id][sel_ix_ls] = cost_val
@@ -972,12 +979,18 @@ class ScaleVariablePlanBouquet:
                         plan_handle = plt.plot( X_tck , p2cl_m[plan_id] , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
                         p2h_m[plan_id]  = plan_handle
                         del p2cl_m[plan_id]
-                plt.xticks(X_tck) # ; plt.yticks(Y_tck)
-                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+                # plt.xticks(X_tck) # ; plt.yticks(Y_tck)
+                plt.xscale('log')
+                plt.yscale('log')
+                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )
                 plt.xlim(0.0, 1.0) # ; plt.ylim(0.0, 1.0)
                 plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
-                plt.ylabel( 'Cost (log-scale)')
-                plt.grid(True)
+                plt.ylabel( 'Cost')
+                # plt.title(r'$POSP$'+' '+r'$Performance$')
+                # plt.title(' '.join((r'$POSP$',r'$Performance$'))))
+                plt.title( ' '.join((   r'$POSP$' , r'$Performance$' , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+                plt.grid(True, which='both')
+                # ax.set_xscale('log') ; # ax.set_yscale('log')
                 plt.savefig( os.path.join( self.plots_dir, '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
                 # plt.show()
             elif self.Dim == 2:
@@ -1012,7 +1025,7 @@ class ScaleVariablePlanBouquet:
                         plan_handle = ax.scatter( X_ls, Y_ls, plans_ls , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )
                         p2h_m[plan_id]  = plan_handle
                     plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+                    plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )                        
                     plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
                     ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
                     ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
@@ -1031,7 +1044,7 @@ class ScaleVariablePlanBouquet:
                         plan_handle = plt.scatter( X_ls, Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                         p2h_m[plan_id]  = plan_handle
                     plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [*p2h_m.values()] , [*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+                    plt.legend( [*p2h_m.values()] , [ *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )                        
                     plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
                     plt.xlabel( '\n'.join(('Selectivity',self.epp[0])) )
                     plt.ylabel( '\n'.join(('Selectivity',self.epp[1])) )
@@ -1071,7 +1084,7 @@ class ScaleVariablePlanBouquet:
                                 plan_handle = plt.scatter( (x_pos,) , (y_pos), c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                                 ax.text(x_pos, y_pos, r'$P_{%s}$'%(str(plan_id)), fontsize=10)
                     plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [cmin_handle, contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+                    plt.legend( [cmin_handle, contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )                        
                     plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
                     ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
                     ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
@@ -1094,7 +1107,7 @@ class ScaleVariablePlanBouquet:
                 self.base_gen( scale=self.base_scale )
             self.simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
             self.save_maps()
-            # self.plot_contours(do_posp=False, scale=scale)
+            self.plot_contours(do_posp=True, scale=scale)
             # self.evaluate()
 
     def product_cover(self, sel_1, sel_2, dual=False):
