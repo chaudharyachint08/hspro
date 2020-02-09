@@ -101,9 +101,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
+
+
 ######## COMMAND LINE ARGUMENTS ########
 
 parser = argparse.ArgumentParser()
+
 def set_cmd_arguments():
     "set command-line arguments"
     # Bool Type Arguments
@@ -139,10 +142,13 @@ def set_cmd_arguments():
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
     globals().update(args.__dict__)
+
 set_cmd_arguments()
 
 if font_size is not None:
     plt.rcParams.update({'font.size': font_size})
+
+
 
 ######## GLOBAL DATA-STRUCTURES BEGINS ########
 
@@ -170,7 +176,10 @@ def global_path_var():
     # creating a lock for os_operations
     os_lock = multiprocessing.Lock()
     # eval( json["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
+
 global_path_var()
+
+
 
 ######## GLOBAL FUNCTIONS BEGINS ########
 
@@ -178,6 +187,7 @@ def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
     os_lock.acquire()
     print( *args, sep=sep, end=end, file=file, flush=flush)
     os_lock.release()
+
 def my_listdir(dir_path='.'):
     "Synchronization construct based listing of files in directory"
     # print(os_lock.__dict__['_semlock']._count())
@@ -194,6 +204,7 @@ def my_listdir(dir_path='.'):
     if error:
         raise FileNotFoundError(error_msg)
     return file_ls
+
 def my_open(file_path, mode='r'):
     "Synchronization construct based opening of a file"
     os_lock.acquire()
@@ -214,10 +225,13 @@ def run(object):
     "Simple Execution for PlanBouquet objects"
     object.run()
 
+
+
 ######## OPERATOR & PLAN DESCRIPTION CLASS ########
 
 class OperatorNode:
     "Node of plan operator class, from which tree can be searched"
+
     def __init__(self, json_obj, level=0, child_ix=0, root2prv_path=[]):
         "Handles feeding of detail of operator node, and recursive construction of plan tree"
         self.level, self.child_ix, self.root2cur_path, self.child_obj_ls, self.node_detail = level, child_ix, root2prv_path+[(level,child_ix),], [], {}
@@ -228,6 +242,7 @@ class OperatorNode:
                 json_obj['Plans']['Plan'] = [ json_obj['Plans']['Plan'] ]
             for sub_ix, sub_json_obj in enumerate(json_obj['Plans']['Plan']):
                 self.child_obj_ls.append( OperatorNode(sub_json_obj, self.level+1, sub_ix, self.root2cur_path) )
+
     def __eq__(self, obj):
         "Overloading == operator for plan tree object"
         if set(self.node_detail.keys()) != set(self.node_detail.keys()):
@@ -243,16 +258,20 @@ class OperatorNode:
                     return False
             else:
                 True
+
     def node_to_str(self):
         "Converting detail of operator node into string"
         node_string = str({ key:self.node_detail[key] for key in sorted(self.node_detail) })
         return '\t'*self.level + str(self.root2cur_path) + '\n' + '\t'*self.level + node_string
+
     def tree_to_str(self):
         "Converting detail of plan tree, operator wise into string, which can be pretty printed"
         if len(self.child_obj_ls):
             return self.node_to_str() + '\n'+ '\t'*self.level +'-->[\n' + '\n'.join((child_obj.tree_to_str() for child_obj in self.child_obj_ls)) + '\n' + '\t'*self.level +'<--]'
         else:
             return self.node_to_str()
+
+
 
 ######## SCALABLE PLAN BOUQUET CLASS ########
 
@@ -310,6 +329,7 @@ class ScaleVariablePlanBouquet:
         self.aed2aed_m = {} # (anorexic_lambda, IC_id, plan_id, scale) useful for CSI Algorithms storage, checking if that execution has already occured in lower IC-contours
         self.aed2m_m   = {} # (anorexic_lambda, IC_id, plan_id, scale) : multiplicity introduced due to anorexic reduction
 
+
     ######## DATA-BASE CONNECTION METHODS ########
     
     def get_cost_and_plan(self, sel, plan_id=None, scale=None): # return (result_cost, result_plan)
@@ -346,6 +366,7 @@ class ScaleVariablePlanBouquet:
                     break
         return (result_cost, result_plan)
 
+
     ######## ABSTRACTION OVER DATA-BASE CONNECTION ########   
 
     def plan(self, sel, scale=None): # return plan_val
@@ -353,6 +374,7 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         _, plan_val = self.get_cost_and_plan(sel, scale=scale)
         return plan_val
+
     def cost(self, sel, plan_id=None, scale=None): # return cost_val
         "Costs plan at some selectivity value"
         scale = scale if (scale is not None) else self.base_scale
@@ -362,6 +384,7 @@ class ScaleVariablePlanBouquet:
         else:
             cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
         return cost_val
+
 
     ######## PLAN PROCESSING, SAVING & LOADING METHOD USING OperatorNode CLASS ########
 
@@ -383,6 +406,7 @@ class ScaleVariablePlanBouquet:
             self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
         return self.r2p_m[plan_serial]
 
+
     ######## PERFORMANCE METRICS METHODS ########
 
     def SubOpt(self, act_sel, est_sel, scale=None, bouquet=False): # SubOpt
@@ -392,11 +416,13 @@ class ScaleVariablePlanBouquet:
             return self.cost(act_sel, plan_id=self.store_plan( self.plan(est_sel, scale=scale) ), scale=scale) / self.cost(act_sel, scale=scale)
         else: # Bouquet Style Metric
             return (self.simulate(act_sel, scale=scale)['termination-cost']) / self.cost(act_sel, scale=scale)
+
     def WorstSubOpt(self, act_sel, scale=None): # WorstSubOpt (|POSP|)
         "SubOpt for all possible est_selectivities"
         scale = scale if (scale is not None) else self.base_scale
         cost_ls = [ self.cost(act_sel, plan_id=plan_id, scale=scale) for plan_id in self.d2o_m[scale] ]
         return max(cost_ls, default=np.inf) / min(cost_ls, default=epsilon)
+
     def MaxSubOpt(self, scale=None, bouquet=False): # MSO (|POSP|*RES**DIM)
         "Global worst case of suboptimality"
         scale = scale if (scale is not None) else self.base_scale
@@ -405,6 +431,7 @@ class ScaleVariablePlanBouquet:
             return max( self.WorstSubOpt(act_sel, scale) for act_sel in epp_iterator )
         else: # Bouquet Style Metric
             return max( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) for act_sel in epp_iterator )
+
     def AvgSubOpt(self, scale=None, bouquet=False):
         "Average suboptimality over ESS under uniformity assumption"
         scale = scale if (scale is not None) else self.base_scale
@@ -420,28 +447,34 @@ class ScaleVariablePlanBouquet:
             return result / (len(sel_range_o[self.Dim])**self.Dim)
         else: # Bouquet Style Metric
             return sum( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) for act_sel in epp_iterator ) / (len(sel_range_o[self.Dim])**self.Dim)
+
     def MaxHarm(self, scale=None):
         "Harm using Plan Bouquet, over Classic Optimizer"
         scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*[ sel_range_o[self.Dim] ]*self.Dim)
         return max(  ( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) / self.WorstSubOpt(act_sel, scale=scale) ) for act_sel in epp_iterator  ) - 1
 
+
     ######## MAPS SAVING & RE-LOADING METHODS FOR RECOMPUTATION AVOIDANCE ON DIFFERENT INVOCATIONS ########    
 
     def save_dict(self, dict_obj, file_name):
         "Serialize json into file"
         json.dump( dict_obj, my_open(file_name,'w') )
+
     def load_dict(self, file_name):
         "Read json from file"
         return json.load( my_open(file_name) )
+
     def save_obj(self, obj, file_name):
         "Serialize object into file"
         with my_open(file_name,'wb') as fp:
             pickle.dump(obj, fp, pickle.HIGHEST_PROTOCOL)
+
     def load_obj(self, file_name):
         "Read object from file"
         with my_open(file_name, 'rb') as fp:
             return pickle.load(fp)
+
     def save_points(self,IC_id,anorexic_lambda,plan_id,scale):
         "Save selectivity points onto disk, cobining with previous points, and clears memory"
         if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
@@ -452,6 +485,7 @@ class ScaleVariablePlanBouquet:
         cur_val.update(prev_val)
         self.save_obj(   cur_val , os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  )  )
         self.iapd2s_m[(IC_id,anorexic_lambda,plan_id,scale)] = set()
+
     def load_points(self,IC_id,anorexic_lambda,plan_id,scale):
         if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
             old_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
@@ -476,10 +510,12 @@ class ScaleVariablePlanBouquet:
         self.save_obj( self.dp2t_m        , os.path.join(self.maps_dir, 'dp2t_m'    ) )
         self.save_obj( self.aed2aed_m     , os.path.join(self.maps_dir, 'aed2aed_m' ) )
         self.save_obj( self.aed2m_m       , os.path.join(self.maps_dir, 'aed2m_m'   ) )
+
     def reindex(self, old_random_p_d, new_random_p_d):
         "Fucntion for changing Indexes for Iso-cost contours, after different loading"
         incr_ratio = (new_random_p_d//old_random_p_d)
         remap = { x:((x+1)*incr_ratio-1) for x in range(old_random_p_d*self.IC_count) }
+
     def remap(self, old_map, reindex_m, re_ix=0, both_side=False):
         "Changing map keys, for re-indexing of Iso-cost contours"
         new_map = {}
@@ -492,6 +528,7 @@ class ScaleVariablePlanBouquet:
                 old_val = ((*old_map[key][:re_ix],reindex_m[old_map[key]],*old_map[key][re_ix+1:]) if tuple_mode_v else reindex_m[old_map[key]])
             new_map[ ((*key[:re_ix],reindex_m[key],*key[re_ix+1:]) if tuple_mode_k else reindex_m[key]) ] = old_val
         return new_map
+
     def load_maps(self):
         "Loads previous maps values into objects for repeatable execution over difference simulation"
         if os.path.isdir(self.maps_dir):
@@ -517,6 +554,7 @@ class ScaleVariablePlanBouquet:
                 self.aed2aed_m, self.aed2m_m = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2aed_m,reindex_m,1)
                 self.exec_specific['random_p_d'] = new_val
 
+
     ######## BOUQUET EXECUTION METHODS ########
 
     def build_posp(self, scale=None):
@@ -531,12 +569,14 @@ class ScaleVariablePlanBouquet:
                 dp2t_m[(scale, plan_id)] = 0
             dp2t_m[(scale, plan_id)] += 1
         self.exec_specific['build_posp'] = True
+
     def build_sel(self, sel_ix_ls, mode='p'):
         "builds selectivity point in ESS from index of points in ESS, this should be made inline later"
         if   mode=='p':
             return tuple( (self.sel_range_p_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_p_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
         elif mode=='o':
             return tuple( (self.sel_range_o_inc[sel_ix] if self.epp_dir[ix]>0 else self.sel_range_o_dec[sel_ix]) for ix,sel_ix in enumerate(sel_ix_ls) )
+
     def base_gen(self, scale=None):
         "Step 0: Find cost values for each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -565,6 +605,7 @@ class ScaleVariablePlanBouquet:
         self.iad2p_m[(self.random_p_IC_count-1,0.0,scale)]         = { plan_max_id }
         self.ipd2s_m[(self.random_p_IC_count-1,plan_max_id,scale)] = { sel_max }
         self.exec_specific['base_gen'] = True
+
     def anorexic_reduction(self, IC_id, scale=None):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -607,6 +648,7 @@ class ScaleVariablePlanBouquet:
         for plan_id in org_plans- reduced_plan_set:
             self.save_points(IC_id,0.0,plan_id,scale)
         self.obj_lock.release()
+
     def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
         scale = scale if (scale is not None) else self.base_scale
@@ -759,6 +801,7 @@ class ScaleVariablePlanBouquet:
             for plan_id in self.iad2p_m[(IC_id, 0.0, scale)]:
                 self.save_points(IC_id,0.0,plan_id,scale)
             self.obj_lock.release()
+
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
         scale = scale if (scale is not None) else self.base_scale
@@ -844,6 +887,7 @@ class ScaleVariablePlanBouquet:
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
             simulation_result['MSO'] = max( simulation_result['MSO_k'].values() )
         return simulation_result
+
     def evaluate(self, mode='p', scale=None):
         "Evaluates various metrics of Native optimizer & Plan Bouquet"
         scale = scale if (scale is not None) else self.base_scale
@@ -859,7 +903,7 @@ class ScaleVariablePlanBouquet:
         if MH is not None:
             print('MH',MH)
 
-    def plot_contours(self, do_posp= False, scale=None):
+    def plot_contours(self, do_posp=False, scale=None):
         "Plotting iso-cost contours up to 3 dimensions"
         scale = scale if (scale is not None) else self.base_scale
         if not os.path.isdir( self.plots_dir ):
@@ -872,9 +916,9 @@ class ScaleVariablePlanBouquet:
                 plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical line at 1.0 selectivity
                 p2h_m = {} # Plan_id to plot_handle mapping
                 X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
-                cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y',linestyle='--')
+                cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y', linestyle='--' )
                 for IC_ix in IC_indices:
-                    contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k',linestyle='--')
+                    contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k', linestyle='--' )
                     for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
                         self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
                         X_ls = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)])[0][0] , )
@@ -910,7 +954,6 @@ class ScaleVariablePlanBouquet:
                 plt.grid(True)
                 plt.savefig( '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
                 # plt.show()
-
             # CHECKPOINT
             elif self.Dim == 2:
                 X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
@@ -937,25 +980,22 @@ class ScaleVariablePlanBouquet:
                             if cost_val < ess_cost_diagram[sel_ix_ls[0]]:
                                 ess_plan_diagram[sel_ix_ls] = plan_id
                                 ess_cost_diagram[sel_ix_ls] = cost_val
-
                     mX_ravel, mY_ravel, ess_plan_diagram_ravel, ess_cost_diagram_ravel =  np.ravel(mX), np.ravel(mY), np.ravel(ess_plan_diagram), np.ravel(ess_cost_diagram)
                     for plan_id in self.d2o_m[scale]:
                     	bool_arr = (ess_plan_diagram_ravel==plan_id)
                     	X_ls, Y_ls, plans_ls = mX_ravel[bool_arr], mY_ravel[bool_arr], ess_cost_diagram_ravel[bool_arr]
                     	plan_handle = ax.scatter( X_ls, Y_ls, plans_ls , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )
                     	p2h_m[plan_id]  = plan_handle
-
 	                plt.xticks(X_tck) ; plt.yticks(Y_tck)
 	                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
 	                plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
 					ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
 					ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
 					ax.set_zlabel( 'Cost (log-scale)')
+					plt.title('Cost Diagram')
 	                plt.savefig( '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
 	                # plt.show()
-
 	                plt.close() ; plt.clf()
-
 	                # Drawing 2D Plan Diagram
                     plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
                     plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
@@ -963,7 +1003,7 @@ class ScaleVariablePlanBouquet:
                     for plan_id in self.d2o_m[scale]:
                     	bool_arr = (ess_plan_diagram_ravel==plan_id)
                     	X_ls, Y_ls = mX_ravel[bool_arr], mY_ravel[bool_arr]
-                    	plan_handle = plot.scatter( X_ls, Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
+                    	plan_handle = plt.scatter( X_ls, Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                     	p2h_m[plan_id]  = plan_handle
 	                plt.xticks(X_tck) ; plt.yticks(Y_tck)
 	                plt.legend( [*p2h_m.values()] , [*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
@@ -971,15 +1011,53 @@ class ScaleVariablePlanBouquet:
 					plt.xlabel( '\n'.join(('Selectivity',self.epp[0])) )
 					plt.ylabel( '\n'.join(('Selectivity',self.epp[1])) )
 	                plt.grid(True)
+	                plt.title('Plan Diagram')
 	                plt.savefig( '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
 	                # plt.show()
                 else:
                     plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
                     plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+	                for IC_ix in IC_indices:
+                    	contour_points = set().union( *(self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale) for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]) )
+	                    for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
+	                        plan_points = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
 
+	                        # List containing Plan_id or None at non-optimal points of contour
+	                        sorted_point_ls = np.array(sorted( contour_points,key=lambda point:(+1*point[0],-1*point[1]) )) # ASC on X, DSC on Y
+	                        sorted_plan_ls  = [ (plan_id if point in plan_points else None) for point in sorted_point_ls ]
+	                        plan_handle = plt.plot( sorted_point_ls.T[0] , sorted_point_ls.T[1], color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
+	                        p2h_m[plan_id] = plan_handle
+	                        # Text & end points of continuous plan region as scatter
+	                        srch_ix = 0
+	                        while srch_ix < len(plan_points):
+	                        	srch_ix_reset = False
+	                        	while (srch_ix < len(plan_points)) and (srch_plan_ls[srch_ix] is None):
+	                        		srch_ix += 1
+	                        		srch_ix_set = True
+	                        	if srch_ix_reset:
+	                        		continue
+	                        	continuous_ix= []
+	                        	while (srch_ix < len(plan_points)) and (sorted_plan_ls[srch_ix] is not None):
+	                        		continuous_points.append( srch_ix )
+	                        		srch_ix += 1
+		                        x_pos, y_pos = continuous_points[len(continuous_points)//2] # Median of continuous points of same planb on present contour
+		                        # Ends have to be shown explicitly, else single point will be missed
+		                        plan_handle = plt.scatter( (x_pos,) , (y_pos), c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
+		                        ax.text(x_pos, y_pos, r'$P_{%s}$'%(str(plan_id)), fontsize=10)
+	                plt.xticks(X_tck) ; plt.yticks(Y_tck)
+	                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+	                plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
+					ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
+					ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
+					ax.set_zlabel( 'Cost (log-scale)')
+					plt.title('Cost Diagram')
+	                plt.savefig( '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+	                # plt.show()
 
             elif self.Dim == 3:
-                pass
+                pass # Some contour plotting can be done in future here
 
     def run(self):
         "Method to Combine, Simulate and Evaluate Plan Bouquet"
@@ -1009,6 +1087,7 @@ class ScaleVariablePlanBouquet:
             return -1
         else:
             return 0
+
     def region_cover(self, points_1, points_2, dual=False):
         "Checks if two execution's points given, will cover each other, +ve if in ascending order"
         grid_1, grid_2 = np.array(points_1), np.array(points_2)
@@ -1035,6 +1114,7 @@ class ScaleVariablePlanBouquet:
             else:
                 return -1
         return 0
+
     def build_hasse(self):
         "To build Hasse diagram for CSI algorithm to work"
         '''
@@ -1051,6 +1131,7 @@ class ScaleVariablePlanBouquet:
         Boolean Data structure & execution maintenance for CSI algorithm
         '''
         pass
+
 
 
 
