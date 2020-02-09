@@ -773,7 +773,7 @@ class ScaleVariablePlanBouquet:
         if scale not in self.exec_specific['nexus']:
             self.exec_specific['nexus'][scale] = {}
         for IC_ix in IC_indices:
-        	if IC_ix not in self.exec_specific['nexus'][scale]:
+            if IC_ix not in self.exec_specific['nexus'][scale]:
                 self.exec_specific['nexus'][scale][IC_ix] = False
         # Launching construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
@@ -794,7 +794,7 @@ class ScaleVariablePlanBouquet:
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
         # Boolean indecxing to check if previous contour is explored in any past invocation
         for IC_ix in IC_indices:
-        	if IC_ix not in self.exec_specific['nexus'][scale]:
+            if IC_ix not in self.exec_specific['nexus'][scale]:
                 self.exec_specific['nexus'][scale][IC_ix] = False
         # Launching construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
@@ -859,85 +859,127 @@ class ScaleVariablePlanBouquet:
         if MH is not None:
             print('MH',MH)
 
-    # CHECKPOINT
     def plot_contours(self, do_posp= False, scale=None):
         "Plotting iso-cost contours up to 3 dimensions"
         scale = scale if (scale is not None) else self.base_scale
         if not os.path.isdir( self.plots_dir ):
-        	os.makedirs( self.plots_dir )
+            os.makedirs( self.plots_dir )
         if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
             random_p_val = self.exec_specific['random_p_d']-1
             IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
 
             if   self.Dim == 1:
-            	plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical line at 1.0 selectivity
-            	p2h_m = {} # Plan_id to plot_handle mapping
-            	cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y',linestyle='--')
-            	for IC_ix in IC_indices:
-            		contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k',linestyle='--')
-            		for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
-            			self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
-            			X = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)])[0][0] , )
-            			Y = ( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) , )
-            			self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = set()
-            			plan_handle = plt.scatter( X , Y, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
-            			p2h_m[plan_id] = plan_handle
-        		X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
-        		# Y_tck = self.sel_range_o_inc if self.epp_dir[1]>0 else self.sel_range_o_dec
-        		# mX, mY = np.meshgrid(X_tck, Y_tck)
-            	if do_posp:
-    	            if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
-		                self.exec_specific['build_posp'] = False
-		                self.build_posp(scale)
-	            	p2cl_m = {} # Cost list for entire selectivity space for each plan stored here
-	            	# Finding Plan Diagram of optimal plans at each location in ESS
-	            	ess_plan_diagram, ess_plan_cost = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
-	            	for plan_id in self.d2o_m[scale]:
-	            		p2cl_m[plan_id] = np.zeros((self.resolution_o,)*self.Dim)
-	            		epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
-		            	for sel_ix_ls in epp_iterator:
-		            		sel = self.build_sel(sel_ix_ls, mode='o')
-	            			cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
-	            			p2cl_m[plan_id][sel_ix_ls[0]] = cost_val
-	            			if cost_val < ess_plan_cost[sel_ix_ls[0]]:
-	            				ess_plan_diagram[sel_ix_ls[0]] = plan_id
-	            		plan_handle = plt.plot( X_tck , p2cl_m[plan_id] , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
-            			p2h_m[plan_id]  = plan_handle
-            			del p2cl_m[plan_id]
-    			plt.xticks(X_tck) # ; plt.yticks(Y_tck)
-				plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )            			
-				plt.xlim(0.0, 1.0) # ; plt.ylim(0.0, 1.0)
-				plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
-				plt.ylabel( 'Cost (log-scale)')
-				plt.grid(True)
-				plt.savefig( '1D {} {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
-				# plt.show()
+                plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical line at 1.0 selectivity
+                p2h_m = {} # Plan_id to plot_handle mapping
+                X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
+                cmin_handle = plt.axhline( np.log(self.C_min)/np.log(r_ratio) ,xmin=0.0, xmax=1.0, color='y',linestyle='--')
+                for IC_ix in IC_indices:
+                    contours_handle = plt.axhline( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) ,xmin=0.0, xmax=1.0,color='k',linestyle='--')
+                    for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
+                        self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
+                        X_ls = ( list(self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)])[0][0] , )
+                        Y_ls = ( np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio) , )
+                        self.iapd2s_m[(IC_ix, self.anorexic_lambda, plan_id, scale)] = set()
+                        plan_handle = plt.scatter( X_ls , Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
+                        p2h_m[plan_id] = plan_handle
+                if do_posp: # Merging Cost daigram of each plan Bouqet diagram
+                    if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
+                        self.exec_specific['build_posp'] = False
+                        self.build_posp(scale)
+                    p2cl_m = {} # Cost list for entire selectivity space for each plan stored here
+                    # Finding Plan Diagram of optimal plans at each location in ESS
+                    ess_plan_diagram, ess_cost_diagram = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
+                    for plan_id in self.d2o_m[scale]:
+                        p2cl_m[plan_id] = np.zeros((self.resolution_o,)*self.Dim)
+                        epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
+                        for sel_ix_ls in epp_iterator:
+                            sel = self.build_sel(sel_ix_ls, mode='o')
+                            cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
+                            p2cl_m[plan_id][sel_ix_ls] = cost_val
+                            if cost_val < ess_cost_diagram[sel_ix_ls]:
+                                ess_plan_diagram[sel_ix_ls] = plan_id
+                                ess_cost_diagram[sel_ix_ls] = cost_val
+                        plan_handle = plt.plot( X_tck , p2cl_m[plan_id] , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
+                        p2h_m[plan_id]  = plan_handle
+                        del p2cl_m[plan_id]
+                plt.xticks(X_tck) # ; plt.yticks(Y_tck)
+                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+                plt.xlim(0.0, 1.0) # ; plt.ylim(0.0, 1.0)
+                plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
+                plt.ylabel( 'Cost (log-scale)')
+                plt.grid(True)
+                plt.savefig( '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                # plt.show()
 
-
-
-
-
+            # CHECKPOINT
             elif self.Dim == 2:
-            	if not do_posp: # Created 2D plot
-            		plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
-            		plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
-            	else:
-            		pass
+                X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
+                Y_tck = self.sel_range_o_inc if self.epp_dir[1]>0 else self.sel_range_o_dec
+                if do_posp: # Created 3D plot of cost & 2D plan diagram
+	                # Drawing 3D Cost Diagram
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+	                p2h_m = {} # Plan_id to plot_handle mapping
+	                mX, mY = np.meshgrid(X_tck, Y_tck)
+	                cmin_hand = ax.plot_surface(mX, mY, (np.log(self.C_min)/np.log(r_ratio))*np.ones(mX.shape), color = 'y', linewidth=0, antialiased=False)
+	                for IC_ix in IC_indices:
+	                    contours_handle = ax.plot_surface(mX, mY, (np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio))*np.ones(mX.shape), color = 'k', linewidth=0, antialiased=False)
+                    if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
+                        self.exec_specific['build_posp'] = False
+                        self.build_posp(scale)
+                    # Finding Plan Diagram of optimal plans at each location in ESS
+                    ess_plan_diagram, ess_cost_diagram = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
+                    for plan_id in self.d2o_m[scale]:
+                        epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
+                        for sel_ix_ls in epp_iterator:
+                            sel = self.build_sel(sel_ix_ls, mode='o')
+                            cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
+                            if cost_val < ess_cost_diagram[sel_ix_ls[0]]:
+                                ess_plan_diagram[sel_ix_ls] = plan_id
+                                ess_cost_diagram[sel_ix_ls] = cost_val
 
+                    mX_ravel, mY_ravel, ess_plan_diagram_ravel, ess_cost_diagram_ravel =  np.ravel(mX), np.ravel(mY), np.ravel(ess_plan_diagram), np.ravel(ess_cost_diagram)
+                    for plan_id in self.d2o_m[scale]:
+                    	bool_arr = (ess_plan_diagram_ravel==plan_id)
+                    	X_ls, Y_ls, plans_ls = mX_ravel[bool_arr], mY_ravel[bool_arr], ess_cost_diagram_ravel[bool_arr]
+                    	plan_handle = ax.scatter( X_ls, Y_ls, plans_ls , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )
+                    	p2h_m[plan_id]  = plan_handle
 
-				plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
-				plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  ) ; plt.ylabel( '\n'.join(('Selectivity',self.epp[1]))  )
+	                plt.xticks(X_tck) ; plt.yticks(Y_tck)
+	                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , ['C-min','IC-contours',*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+	                plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
+					ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
+					ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
+					ax.set_zlabel( 'Cost (log-scale)')
+	                plt.savefig( '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+	                # plt.show()
 
-				if do_posp:
-					plt.zlabel( 'Cost (log-scale)')
-				else:
-					plt.grid(True)
-				
-				plt.savefig( '2D {} {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
-				plt.show()            		
+	                plt.close() ; plt.clf()
+
+	                # Drawing 2D Plan Diagram
+                    plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
+                    plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
+	                p2h_m = {} # Plan_id to plot_handle mapping, to be cleared for next plot
+                    for plan_id in self.d2o_m[scale]:
+                    	bool_arr = (ess_plan_diagram_ravel==plan_id)
+                    	X_ls, Y_ls = mX_ravel[bool_arr], mY_ravel[bool_arr]
+                    	plan_handle = plot.scatter( X_ls, Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
+                    	p2h_m[plan_id]  = plan_handle
+	                plt.xticks(X_tck) ; plt.yticks(Y_tck)
+	                plt.legend( [*p2h_m.values()] , [*p2h_m.keys()] , loc='upper right', bbox_to_anchor=(1.4, 1.025) )                        
+	                plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
+					plt.xlabel( '\n'.join(('Selectivity',self.epp[0])) )
+					plt.ylabel( '\n'.join(('Selectivity',self.epp[1])) )
+	                plt.grid(True)
+	                plt.savefig( '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) , format='PNG' , dpi=600 , bbox_inches='tight' )
+	                # plt.show()
+                else:
+                    plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
+                    plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
+
 
             elif self.Dim == 3:
-            	pass
+                pass
 
     def run(self):
         "Method to Combine, Simulate and Evaluate Plan Bouquet"

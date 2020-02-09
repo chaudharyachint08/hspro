@@ -23,9 +23,9 @@ fig = plt.figure()
 ax = fig.gca(projection='3d')
 
 # Make data.
-max_scale, max_dim, plot_res = 10, 2, 1000
+max_scale, max_dim, plot_res = 5, 2, 10
 
-max_opt_call = 10**5
+max_opt_call = 10**1
 
 X_copy = X = np.linspace(2, max_scale, plot_res)
 Y = np.linspace(1, max_dim,   plot_res)
@@ -37,7 +37,8 @@ Z = np.log2(X)**Y
 # Plot the surface.
 # surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
-surf = ax.plot_surface(X, Y, Z, cmap='viridis', linewidth=0, antialiased=False)
+# surf = ax.plot_surface(X, Y, Z, cmap='viridis', linewidth=0, antialiased=False)
+surf = ax.scatter(X, Y, Z, cmap='viridis', linewidth=0, antialiased=False)
 
 # Customize the z axis.
 # ax.set_zlim(0, None)
@@ -46,6 +47,6 @@ ax.zaxis.set_major_locator(LinearLocator(10))
 ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 
 # Add a color bar which maps values to colors.
-fig.colorbar(surf, shrink=0.5, aspect=5)
+# fig.colorbar(surf, shrink=0.5, aspect=5)
 
 plt.show()
