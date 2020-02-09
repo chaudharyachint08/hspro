@@ -1,0 +1,47 @@
+<explain xmlns="http://www.postgresql.org/2009/explain">
+  <Query>
+    <Plan>
+      <Node-Type>Aggregate</Node-Type>
+      <Strategy>Plain</Strategy>
+      <Startup-Cost>30079.83</Startup-Cost>
+      <Total-Cost>30079.84</Total-Cost>
+      <Plan-Rows>1</Plan-Rows>
+      <Plan-Width>0</Plan-Width>
+      <Output>
+        <Item>count(*)</Item>
+      </Output>
+      <Plans>
+        <Plan>
+          <Node-Type>Bitmap Heap Scan</Node-Type>
+          <Parent-Relationship>Outer</Parent-Relationship>
+          <Relation-Name>inventory</Relation-Name>
+          <Schema>public</Schema>
+          <Alias>inventory</Alias>
+          <Startup-Cost>391.43</Startup-Cost>
+          <Total-Cost>29989.19</Total-Cost>
+          <Plan-Rows>36257</Plan-Rows>
+          <Plan-Width>0</Plan-Width>
+          <Output>
+            <Item>inv_date_sk</Item>
+            <Item>inv_item_sk</Item>
+            <Item>inv_warehouse_sk</Item>
+            <Item>inv_quantity_on_hand</Item>
+          </Output>
+          <Recheck-Cond>(inventory.inv_quantity_on_hand &lt;= 1000)</Recheck-Cond>
+          <Plans>
+            <Plan>
+              <Node-Type>Bitmap Index Scan</Node-Type>
+              <Parent-Relationship>Outer</Parent-Relationship>
+              <Index-Name>inventory_inv_quantity_on_hand_idx</Index-Name>
+              <Startup-Cost>0.00</Startup-Cost>
+              <Total-Cost>382.36</Total-Cost>
+              <Plan-Rows>36257</Plan-Rows>
+              <Plan-Width>0</Plan-Width>
+              <Index-Cond>(inventory.inv_quantity_on_hand &lt;= 1000)</Index-Cond>
+            </Plan>
+          </Plans>
+        </Plan>
+      </Plans>
+    </Plan>
+  </Query>
+</explain>

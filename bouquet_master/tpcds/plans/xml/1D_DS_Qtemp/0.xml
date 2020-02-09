@@ -1,0 +1,34 @@
+<explain xmlns="http://www.postgresql.org/2009/explain">
+  <Query>
+    <Plan>
+      <Node-Type>Aggregate</Node-Type>
+      <Strategy>Plain</Strategy>
+      <Startup-Cost>1308.70</Startup-Cost>
+      <Total-Cost>1308.71</Total-Cost>
+      <Plan-Rows>1</Plan-Rows>
+      <Plan-Width>0</Plan-Width>
+      <Output>
+        <Item>count(*)</Item>
+      </Output>
+      <Plans>
+        <Plan>
+          <Node-Type>Index Only Scan</Node-Type>
+          <Parent-Relationship>Outer</Parent-Relationship>
+          <Scan-Direction>Forward</Scan-Direction>
+          <Index-Name>inventory_inv_quantity_on_hand_idx</Index-Name>
+          <Relation-Name>inventory</Relation-Name>
+          <Schema>public</Schema>
+          <Alias>inventory</Alias>
+          <Startup-Cost>0.43</Startup-Cost>
+          <Total-Cost>1305.77</Total-Cost>
+          <Plan-Rows>1174</Plan-Rows>
+          <Plan-Width>0</Plan-Width>
+          <Output>
+            <Item>inv_quantity_on_hand</Item>
+          </Output>
+          <Index-Cond>(inventory.inv_quantity_on_hand &lt;= 1000)</Index-Cond>
+        </Plan>
+      </Plans>
+    </Plan>
+  </Query>
+</explain>

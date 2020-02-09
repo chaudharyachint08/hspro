@@ -1,0 +1,35 @@
+<explain xmlns="http://www.postgresql.org/2009/explain">
+  <Query>
+    <Plan>
+      <Node-Type>Aggregate</Node-Type>
+      <Strategy>Plain</Strategy>
+      <Startup-Cost>239661.25</Startup-Cost>
+      <Total-Cost>239661.26</Total-Cost>
+      <Plan-Rows>1</Plan-Rows>
+      <Plan-Width>0</Plan-Width>
+      <Output>
+        <Item>count(*)</Item>
+      </Output>
+      <Plans>
+        <Plan>
+          <Node-Type>Seq Scan</Node-Type>
+          <Parent-Relationship>Outer</Parent-Relationship>
+          <Relation-Name>inventory</Relation-Name>
+          <Schema>public</Schema>
+          <Alias>inventory</Alias>
+          <Startup-Cost>0.00</Startup-Cost>
+          <Total-Cost>210298.88</Total-Cost>
+          <Plan-Rows>11744950</Plan-Rows>
+          <Plan-Width>0</Plan-Width>
+          <Output>
+            <Item>inv_date_sk</Item>
+            <Item>inv_item_sk</Item>
+            <Item>inv_warehouse_sk</Item>
+            <Item>inv_quantity_on_hand</Item>
+          </Output>
+          <Filter>(inventory.inv_quantity_on_hand &lt;= 1000)</Filter>
+        </Plan>
+      </Plans>
+    </Plan>
+  </Query>
+</explain>
