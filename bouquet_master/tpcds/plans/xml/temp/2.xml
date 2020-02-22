@@ -3,8 +3,8 @@
     <Plan>
       <Node-Type>Aggregate</Node-Type>
       <Strategy>Plain</Strategy>
-      <Startup-Cost>30079.83</Startup-Cost>
-      <Total-Cost>30079.84</Total-Cost>
+      <Startup-Cost>30153.49</Startup-Cost>
+      <Total-Cost>30153.50</Total-Cost>
       <Plan-Rows>1</Plan-Rows>
       <Plan-Width>0</Plan-Width>
       <Output>
@@ -17,9 +17,9 @@
           <Relation-Name>inventory</Relation-Name>
           <Schema>public</Schema>
           <Alias>inventory</Alias>
-          <Startup-Cost>391.43</Startup-Cost>
-          <Total-Cost>29989.19</Total-Cost>
-          <Plan-Rows>36257</Plan-Rows>
+          <Startup-Cost>392.33</Startup-Cost>
+          <Total-Cost>30062.55</Total-Cost>
+          <Plan-Rows>36374</Plan-Rows>
           <Plan-Width>0</Plan-Width>
           <Output>
             <Item>inv_date_sk</Item>
@@ -34,8 +34,8 @@
               <Parent-Relationship>Outer</Parent-Relationship>
               <Index-Name>inventory_inv_quantity_on_hand_idx</Index-Name>
               <Startup-Cost>0.00</Startup-Cost>
-              <Total-Cost>382.36</Total-Cost>
-              <Plan-Rows>36257</Plan-Rows>
+              <Total-Cost>383.24</Total-Cost>
+              <Plan-Rows>36374</Plan-Rows>
               <Plan-Width>0</Plan-Width>
               <Index-Cond>(inventory.inv_quantity_on_hand &lt;= 1000)</Index-Cond>
             </Plan>

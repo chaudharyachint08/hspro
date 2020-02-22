@@ -110,9 +110,9 @@ parser = argparse.ArgumentParser()
 def set_cmd_arguments():
     "set command-line arguments"
     # Bool Type Arguments
-    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
+    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=True) # Whether to include point of zero-selectivity, for mathematical convenience 
     parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True) # To generate new information, like plans, contours, points
-    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=True) # If to use Anorexic Reduction Heuristic
+    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
     parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
@@ -120,7 +120,7 @@ def set_cmd_arguments():
     parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
-    parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
+    parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=5) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
     parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=6) # If have to round of selectivity values during computation
     parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # If have to round of selectivity values during computation
     # Float Type Arguments
@@ -136,8 +136,8 @@ def set_cmd_arguments():
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
     parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
     # Tuple Type Arguments
-    parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  300,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000,  300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  50,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
+    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
     parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
@@ -502,6 +502,7 @@ class ScaleVariablePlanBouquet:
 
     def save_maps(self):
         "Save present maps values into objects for repeatable execution over difference simulation"
+        print('Entering SAVE_MAPS')
         if not os.path.isdir(self.maps_dir):
             os.makedirs(self.maps_dir)
         self.save_obj( self.exec_specific , os.path.join(self.maps_dir, 'exec_specific' ) )
@@ -517,6 +518,7 @@ class ScaleVariablePlanBouquet:
         self.save_obj( self.dp2t_m        , os.path.join(self.maps_dir, 'dp2t_m'    ) )
         self.save_obj( self.aed2aed_m     , os.path.join(self.maps_dir, 'aed2aed_m' ) )
         self.save_obj( self.aed2m_m       , os.path.join(self.maps_dir, 'aed2m_m'   ) )
+        print('Exiting SAVE_MAPS')
 
     def reindex(self, old_random_p_d, new_random_p_d):
         "Fucntion for changing Indexes for Iso-cost contours, after different loading"
@@ -538,6 +540,7 @@ class ScaleVariablePlanBouquet:
 
     def load_maps(self):
         "Loads previous maps values into objects for repeatable execution over difference simulation"
+        print('Entering LOAD_MAPS')
         if new_info:
             try:
                 shutil.rmtree(self.maps_dir)
@@ -569,13 +572,16 @@ class ScaleVariablePlanBouquet:
                 self.iad2p_m, self.id2c_m, self.iapd2s_m = self.remap(self.iad2p_m,reindex_m,0), self.remap(self.id2c_m,reindex_m,0), self.remap(self.iapd2s_m,reindex_m,0)
                 self.aed2aed_m, self.aed2m_m = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2aed_m,reindex_m,1)
                 self.exec_specific['random_p_d'] = new_val
+        print('Exiting LOAD_MAPS')
 
 
     ######## BOUQUET EXECUTION METHODS ########
 
     def build_posp(self, scale=None):
         "Optimal plans over ESS, exponential time, bouquet plans also added during compilation"
+        print('Entering BUILD_POSP')
         scale = scale if (scale is not None) else self.base_scale
+        init = datetime.now()
         if scale not in self.d2o_m:
             self.d2o_m[scale] = set()
         # count = 0
@@ -590,6 +596,7 @@ class ScaleVariablePlanBouquet:
             # count += 1
             # print(count)
         self.exec_specific['build_posp'] = True
+        print('Exiting BUILD_POSP', datetime.now()-init )
 
     def build_sel(self, sel_ix_ls, mode='p'):
         "builds selectivity point in ESS from index of points in ESS, this should be made inline later"
@@ -601,6 +608,7 @@ class ScaleVariablePlanBouquet:
 
     def base_gen(self, scale=None):
         "Find cost values for each iso-cost surface"
+        print('Entered BASE_GEN')
         scale = scale if (scale is not None) else self.base_scale
         if scale not in self.d2o_m:
             self.d2o_m[scale] = set()
@@ -628,9 +636,11 @@ class ScaleVariablePlanBouquet:
         self.iad2p_m[(self.random_p_IC_count-1,0.0,scale)]          = { plan_max_id }
         self.iapd2s_m[(self.random_p_IC_count-1,0.0,plan_max_id,scale)] = { sel_max }
         self.exec_specific['base_gen'] = True
+        print('Exiting BASE_GEN')
 
     def anorexic_reduction(self, IC_id, scale=None):
         "Reduing overall number of plans, effectively reducing plan density on each iso-cost surface"
+        print('Entered ANOREXIC',IC_id,len(inspect.stack(0)),threading.current_thread())
         scale = scale if (scale is not None) else self.base_scale
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         # Identity mapping for CSI with ANOREXIC reduction
@@ -671,10 +681,11 @@ class ScaleVariablePlanBouquet:
         for plan_id in org_plans- reduced_plan_set:
             self.save_points(IC_id,0.0,plan_id,scale)
         self.obj_lock.release()
+        print('Exiting ANOREXIC',IC_id,len(inspect.stack(0)),threading.current_thread())
 
     def nexus(self, IC_id, scale=None):
         "Step 1: Find Plans on each Iso-cost surface"
-        # print('NEXUS CALLED',IC_id,len(inspect.stack(0)),threading.current_thread())
+        print('Entered NEXUS',IC_id,len(inspect.stack(0)),threading.current_thread())
         scale = scale if (scale is not None) else self.base_scale
         '''
         # Locating Initial Seed, Binary Search based edges selection
@@ -741,6 +752,7 @@ class ScaleVariablePlanBouquet:
             def exploration(org_seed_ix, total_dim):
                 "Nested function for exploration using seed and contour generation"
                 nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock
+                print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
                 if total_dim >= 1 :
                     dim_h = total_dim-1
                     cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
@@ -795,6 +807,7 @@ class ScaleVariablePlanBouquet:
                     # Waiting for construction of all Ico-cost contours
                     for explore_thread in exploration_thread_ls:
                         explore_thread.join()
+                print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
             exploration(initial_seed_ix, self.Dim)
@@ -829,9 +842,12 @@ class ScaleVariablePlanBouquet:
             for plan_id in self.iad2p_m[(IC_id, 0.0, scale)]:
                 self.save_points(IC_id,0.0,plan_id,scale)
             self.obj_lock.release()
+        print('Exiting NEXUS',IC_id,len(inspect.stack(0)),threading.current_thread())
+
 
     def simulate(self, act_sel, scale=None):
         "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
+        print('Entered SIMULATION')
         scale = scale if (scale is not None) else self.base_scale
         # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
         random_p_val = self.exec_specific['random_p_d']-1
@@ -862,6 +878,7 @@ class ScaleVariablePlanBouquet:
         else:
             random_p_val = self.exec_specific['random_p_d']-1
         IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
+        print(IC_indices)
         # Executing NEXUS Algorithm for multi-dimensions
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
         # Boolean indecxing to check if previous contour is explored in any past invocation
@@ -918,6 +935,7 @@ class ScaleVariablePlanBouquet:
                 simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / min(prev_IC_cost_ls)
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
             simulation_result['MSO'] = max( simulation_result['MSO_k'].values() )
+        print('Exiting SIMULATION')
         return simulation_result
 
     def evaluate(self, mode='p', scale=None):
@@ -937,6 +955,7 @@ class ScaleVariablePlanBouquet:
 
     def plot_contours(self, do_posp=False, scale=None):
         "Plotting iso-cost contours up to 3 dimensions"
+        print('Entered PLOTTING')
         scale = scale if (scale is not None) else self.base_scale
         if not os.path.isdir( self.plots_dir ):
             os.makedirs( self.plots_dir )
@@ -982,12 +1001,10 @@ class ScaleVariablePlanBouquet:
                 # plt.xticks(X_tck) # ; plt.yticks(Y_tck)
                 plt.xscale('log')
                 plt.yscale('log')
-                plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )
+                plt.legend( [cmin_handle,contours_handle,*[p2h_m[k] for k in sorted(p2h_m)]] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in sorted(p2h_m.keys()) ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )
                 plt.xlim(0.0, 1.0) # ; plt.ylim(0.0, 1.0)
                 plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
-                plt.ylabel( 'Cost')
-                # plt.title(r'$POSP$'+' '+r'$Performance$')
-                # plt.title(' '.join((r'$POSP$',r'$Performance$'))))
+                plt.ylabel( 'Cost' )
                 plt.title( ' '.join((   r'$POSP$' , r'$Performance$' , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                 plt.grid(True, which='both')
                 # ax.set_xscale('log') ; # ax.set_yscale('log')
@@ -997,43 +1014,50 @@ class ScaleVariablePlanBouquet:
                 X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
                 Y_tck = self.sel_range_o_inc if self.epp_dir[1]>0 else self.sel_range_o_dec
                 if do_posp: # Created 3D plot of cost & 2D plan diagram
-                    # Drawing 3D Cost Diagram
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111, projection='3d')
-                    p2h_m = {} # Plan_id to plot_handle mapping
                     mX, mY = np.meshgrid(X_tck, Y_tck)
-                    cmin_hand = ax.plot_surface(mX, mY, (np.log(self.C_min)/np.log(r_ratio))*np.ones(mX.shape), color = 'y', linewidth=0, antialiased=False)
-                    for IC_ix in IC_indices:
-                        contours_handle = ax.plot_surface(mX, mY, (np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio))*np.ones(mX.shape), color = 'k', linewidth=0, antialiased=False)
                     if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
                         self.exec_specific['build_posp'] = False
-                        self.build_posp(scale)
-                    # Finding Plan Diagram of optimal plans at each location in ESS
                     ess_plan_diagram, ess_cost_diagram = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
                     for plan_id in self.d2o_m[scale]:
                         epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
-                        for sel_ix_ls in epp_iterator:
+                        for sel_ix_ls in epp_ix_iterator:
                             sel = self.build_sel(sel_ix_ls, mode='o')
                             cost_val = self.cost(sel, plan_id=plan_id, scale=scale)
-                            if cost_val < ess_cost_diagram[sel_ix_ls[0]]:
+                            if cost_val < ess_cost_diagram[sel_ix_ls]:
                                 ess_plan_diagram[sel_ix_ls] = plan_id
                                 ess_cost_diagram[sel_ix_ls] = cost_val
                     mX_ravel, mY_ravel, ess_plan_diagram_ravel, ess_cost_diagram_ravel =  np.ravel(mX), np.ravel(mY), np.ravel(ess_plan_diagram), np.ravel(ess_cost_diagram)
-                    for plan_id in self.d2o_m[scale]:
-                        bool_arr = (ess_plan_diagram_ravel==plan_id)
-                        X_ls, Y_ls, plans_ls = mX_ravel[bool_arr], mY_ravel[bool_arr], ess_cost_diagram_ravel[bool_arr]
-                        plan_handle = ax.scatter( X_ls, Y_ls, plans_ls , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )
-                        p2h_m[plan_id]  = plan_handle
-                    plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [cmin_handle,contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )                        
-                    plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
-                    ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
-                    ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
-                    ax.set_zlabel( 'Cost (log-scale)')
-                    plt.title('Cost Diagram')
-                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    self.build_posp(scale)
+
+                    # Drawing 3D Cost Diagram
+                    # fig = plt.figure()
+                    # ax = fig.add_subplot(111, projection='3d')
+                    p2h_m = {} # Plan_id to plot_handle mapping
+                    # cmin_handle = ax.plot_surface(mX, mY, self.C_min*np.ones(mX.shape), color = 'y', linewidth=0, antialiased=False)
+                    # for IC_ix in IC_indices:
+                    #     contours_handle = ax.plot_surface(mX, mY, (np.log(self.id2c_m[(IC_ix, scale)])/np.log(r_ratio))*np.ones(mX.shape), color = 'k', linewidth=0, antialiased=False)
+                    # Finding Plan Diagram of optimal plans at each location in ESS
+                    # for plan_id in self.d2o_m[scale]:
+                    #     bool_arr = (ess_plan_diagram_ravel==plan_id)
+                    #     X_ls, Y_ls, plans_ls = mX_ravel[bool_arr], mY_ravel[bool_arr], ess_cost_diagram_ravel[bool_arr]
+                    #     plan_handle = ax.scatter( X_ls, Y_ls, plans_ls , color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )
+                    #     p2h_m[plan_id]  = plan_handle
+                    # # plt.xticks(X_tck) ; plt.yticks(Y_tck)
+                    # ax.set_xscale('log')
+                    # ax.set_yscale('log')
+                    # ax.set_zscale('log')
+                    # plt.legend( [cmin_handle,contours_handle,*[p2h_m[k] for k in sorted(p2h_m)]] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in sorted(p2h_m.keys()) ] ] , loc='upper right', bbox_to_anchor=(1.25, 1.0) )                        
+                    # plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
+                    # plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
+                    # plt.ylabel( '\n'.join(('Selectivity',self.epp[1]))  )
+                    # ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
+                    # ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
+                    # ax.set_zlabel( 'Cost' )
+                    # plt.title( ' '.join((   r'$Contour$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+                    # plt.savefig( os.path.join( self.plots_dir, '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
                     # plt.show()
                     plt.close() ; plt.clf()
+
                     # Drawing 2D Plan Diagram
                     plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
                     plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
@@ -1041,59 +1065,66 @@ class ScaleVariablePlanBouquet:
                     for plan_id in self.d2o_m[scale]:
                         bool_arr = (ess_plan_diagram_ravel==plan_id)
                         X_ls, Y_ls = mX_ravel[bool_arr], mY_ravel[bool_arr]
+                        print(X_ls, Y_ls)
                         plan_handle = plt.scatter( X_ls, Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                         p2h_m[plan_id]  = plan_handle
-                    plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [*p2h_m.values()] , [ *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )                        
+                    # plt.xticks(X_tck) ; plt.yticks(Y_tck)
+                    # plt.xscale('log')
+                    # plt.yscale('log')
+                    plt.legend( [*[p2h_m[k] for k in sorted(p2h_m)]] , [ *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in sorted(p2h_m.keys()) ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )
                     plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
                     plt.xlabel( '\n'.join(('Selectivity',self.epp[0])) )
                     plt.ylabel( '\n'.join(('Selectivity',self.epp[1])) )
-                    plt.grid(True)
-                    plt.title('Plan Diagram')
+                    plt.title( ' '.join((   r'$Plan$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+                    plt.grid(True, which='both')
                     plt.savefig( os.path.join( self.plots_dir, '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
-                    # plt.show()
+                    plt.show()
                 else:
                     plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
                     plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
                     fig = plt.figure()
                     ax = fig.add_subplot(111)
+                    p2h_m = {} # Plan_id to plot_handle mapping
                     for IC_ix in IC_indices:
                         contour_points = set().union( *(self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale) for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]) )
                         for plan_id in self.iad2p_m[(IC_ix, self.anorexic_lambda, scale)]:
                             plan_points = self.load_points(IC_ix, self.anorexic_lambda, plan_id, scale)
                             # List containing Plan_id or None at non-optimal points of contour
                             sorted_point_ls = np.array(sorted( contour_points,key=lambda point:(+1*point[0],-1*point[1]) )) # ASC on X, DSC on Y
-                            sorted_plan_ls  = [ (plan_id if point in plan_points else None) for point in sorted_point_ls ]
+                            sorted_plan_ls  = [ (plan_id if tuple(point) in plan_points else None) for point in sorted_point_ls ]
                             plan_handle = plt.plot( sorted_point_ls.T[0] , sorted_point_ls.T[1], color = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] )[0]
                             p2h_m[plan_id] = plan_handle
                             # Text & end points of continuous plan region as scatter
                             srch_ix = 0
                             while srch_ix < len(plan_points):
                                 srch_ix_reset = False
-                                while (srch_ix < len(plan_points)) and (srch_plan_ls[srch_ix] is None):
+                                while (srch_ix < len(plan_points)) and (sorted_plan_ls[srch_ix] is None):
                                     srch_ix += 1
                                     srch_ix_set = True
                                 if srch_ix_reset:
                                     continue
-                                continuous_ix= []
+                                continuous_ix_ls = []
                                 while (srch_ix < len(plan_points)) and (sorted_plan_ls[srch_ix] is not None):
-                                    continuous_points.append( srch_ix )
+                                    continuous_ix_ls.append( srch_ix )
                                     srch_ix += 1
-                                x_pos, y_pos = continuous_points[len(continuous_points)//2] # Median of continuous points of same planb on present contour
+                                x_pos, y_pos = sorted_point_ls[len(continuous_ix_ls)//2] # Median of continuous points of same planb on present contour
                                 # Ends have to be shown explicitly, else single point will be missed
                                 plan_handle = plt.scatter( (x_pos,) , (y_pos), c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                                 ax.text(x_pos, y_pos, r'$P_{%s}$'%(str(plan_id)), fontsize=10)
-                    plt.xticks(X_tck) ; plt.yticks(Y_tck)
-                    plt.legend( [cmin_handle, contours_handle,*p2h_m.values()] , [ r'$C_{%s}$'%('min'), r'$IC_{%s}$'%('contour'), *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in p2h_m.keys() ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )                        
+                    # plt.xticks(X_tck) # ; plt.yticks(Y_tck)
+                    plt.xscale('log')
+                    plt.yscale('log')
+                    plt.legend( [*[p2h_m[k] for k in sorted(p2h_m)]] , [ *[ r'$P_{%s}$'%(str(plan_id)) for plan_id in sorted(p2h_m.keys()) ] ] , loc='upper right', bbox_to_anchor=(1.2, 1.0) )                        
                     plt.xlim(0.0, 1.0) ; plt.ylim(0.0, 1.0)
-                    ax.set_xlabel( '\n'.join(('Selectivity',self.epp[0])) )
-                    ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
-                    ax.set_zlabel( 'Cost (log-scale)')
-                    plt.title('Cost Diagram')
-                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Contours Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    plt.xlabel( '\n'.join(('Selectivity',self.epp[0]))  )
+                    plt.ylabel( '\n'.join(('Selectivity',self.epp[1]))  )
+                    plt.title( ' '.join((   r'$Contour$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+                    plt.grid(True, which='both')
+                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Contours Diagram {}GB {} {}.PNG'.format(scale, self.anorexic_lambda,('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
                     # plt.show()
             elif self.Dim == 3:
                 pass # Some contour plotting can be done in future here
+        print('Exiting PLOTTING')
 
     def run(self, scale=None):
         "Method to Combine, Simulate and Evaluate Plan Bouquet"
@@ -1107,7 +1138,11 @@ class ScaleVariablePlanBouquet:
                 self.base_gen( scale=self.base_scale )
             self.simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
             self.save_maps()
-            self.plot_contours(do_posp=True, scale=scale)
+            if   self.Dim==1:
+                self.plot_contours(do_posp=True,  scale=scale)
+            elif self.Dim==2:
+                self.plot_contours(do_posp=False, scale=scale)
+
             # self.evaluate()
 
     def product_cover(self, sel_1, sel_2, dual=False):
@@ -1193,11 +1228,18 @@ if __name__=='__main__':
     obj_ls, stderr = [], my_open(os.path.join(master_dir,'stderr.txt'),'w')
     for query_name in my_listdir( os.path.join(master_dir,benchmark,'sql') ):
         query_id = query_name.split('.')[0].strip()
-        obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
+        if query_id == 'temp':
+            for base_scale in db_scales:
+                obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,base_scale,db_scales,stderr) )
+        # obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
+        
 
+    # obj = obj_ls[0]
+    # run(obj)
 
-    obj = obj_ls[0]
-    run(obj)
+    # Serial Execution, each query at a time, no multi-process for different queries, while multi-threading still there
+    for obj in obj_ls:
+        run(obj)
 
     # try:
     #     with multiprocessing.Pool(processes=CPU) as pool:

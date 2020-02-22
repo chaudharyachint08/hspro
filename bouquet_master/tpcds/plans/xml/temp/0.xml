@@ -3,8 +3,8 @@
     <Plan>
       <Node-Type>Aggregate</Node-Type>
       <Strategy>Plain</Strategy>
-      <Startup-Cost>1308.70</Startup-Cost>
-      <Total-Cost>1308.71</Total-Cost>
+      <Startup-Cost>2.65</Startup-Cost>
+      <Total-Cost>2.66</Total-Cost>
       <Plan-Rows>1</Plan-Rows>
       <Plan-Width>0</Plan-Width>
       <Output>
@@ -20,8 +20,8 @@
           <Schema>public</Schema>
           <Alias>inventory</Alias>
           <Startup-Cost>0.43</Startup-Cost>
-          <Total-Cost>1305.77</Total-Cost>
-          <Plan-Rows>1174</Plan-Rows>
+          <Total-Cost>2.65</Total-Cost>
+          <Plan-Rows>1</Plan-Rows>
           <Plan-Width>0</Plan-Width>
           <Output>
             <Item>inv_quantity_on_hand</Item>

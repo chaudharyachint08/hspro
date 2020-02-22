@@ -66,3 +66,18 @@ During implementation also, have you considered GP, or A.P. instead, and how sho
 And, have you also considered absolute 0 selectivity of all EPP in implementation
 </pre>
 
+
+
+## Basic Implementation Idea
+
+<pre>
+Version of matplotlib 3.1.1
+Version of seaborn 0.9.0
+Version of numpy 1.17.4
+Version of pandas 0.25.3
+Version of scipy 1.3.2
+Version of sklearn 0.21.3
+Version of tensorflow 1.14.0
+Version of h5py 2.9.0
+Version of keras 2.2.5
+</pre>

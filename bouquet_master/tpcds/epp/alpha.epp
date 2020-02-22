@@ -1,1 +1,2 @@
-inv_quantity_on_hand <=1000 | +1
+i_item_sk = inv_item_sk | +1
+d_date_sk = inv_date_sk | +1
