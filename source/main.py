@@ -1253,11 +1253,12 @@ if __name__=='__main__':
     # Awadesh Acc 04
     # Apoorva     08
     # Abhinav     15
+    # Ankit Sahu  10
     # Fees Buffer 10
+    # Nanhe Bhai  35
 
     # PackT book  12
-    # Ankit Sahu  10
-
+    
     # Total 48
 
     stderr.close()
