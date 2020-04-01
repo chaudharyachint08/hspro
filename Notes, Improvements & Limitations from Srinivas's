@@ -1,0 +1,70 @@
+<<<< Notes, Improvements & Limitations from Srinivas's Thesis for Incremental Bouquet >>>>
+
+Outdated statistics, coarse summaries, attribute value independence assumptions, complex user-defined predicates, and error propagation in the query plan tree
+In ETL, statistics may actually be unavailable
+
+
+5D_Q29_DS is 5 Dim, Query 29 TPC-DS
+
+Huge compile time effort for guarantee computation, Impact of Dimensionality, Platform independence
+PB does Hypograph pruning, SB does Half-Space pruning via Spilling
+Downstream nodes are not executed, Spill node indentification should be clear
+Independence of Cost model, Simulation will work for my experiments
+Demand driver Iterator model, no concurrency inter- or intra-pipeline
+Spillbound doesn't used Anorexic reduction anywhere, however DimRed uses relaxation in similar way
+1D is always Plan bouquet, as spilling will have no use for 1D
+ESS is Subset of PSS, trivial predicates will also arise in case of scalable plan boquet
+
+
+Origin & Terminus, how to specify, in either of AP/GP
+Total order conversion for Spill-node indentification is issue for implementation
+Removal of Repeat executions and Multiple merged execution post spill node
+Concept of Repeat execution, as it contributes significantly to bound provided by SpillBound
+Can we remove partially, "Selectivity Independence" at Contour level for selectivity discovery??
+Should we Spill at 1st node itself?? Can anything from Plan Bouquet (much partial plan execution) be still used??
+
+
+
+
+PCM Assumption Issues, if Violated, approximation fit 
+In practice, however, we observe minor violations in monotonicity and smoothness assumptions.
+We overcome this issue by fitting a continuous monotonic function to the actual function.
+Empirically we see that this fitting can achieved with small errors
+
+Validation of APC
+Further, even the rare violations that surfaced were found to be artifacts of rounding
+errors, cost-modeling errors, and occasional PCM violations due to the PostgreSQL query optimizer
+not being entirely cost-based in character.
+
+
+
+
+Aligned bound is achieved in restricted set of environments, I am leaving that for now
+FrugalSB is meant for Ad-hoc queries, exponential reduction, for linear increase in MSO
+What if MSO relaxation is larger than Cost doubling ratio, issues for sure in 1D FrugalSB
+Taking a finite resolution say R=100, is it ok to take 1% on Terabyte database will itself be too large an assumption
+
+
+
+#### DimRed ####
+SchematicRed > MaxSelRed > WeakDimRed (Empirical Only)
+Overhead reduction, MSO minimization are two different things achieved in 3 stage pipeline
+
+# SchematicRed
+If not accurate, tighter lower & upper bounds
+The above discussion was for individual predicates. However, in general, there may be multiple filter predicates on a base relation. In such cases, we first compute the ranges or values for each individual predicate (in the manner discussed above), and then use these individual bounds to compute bounds on the relational selectivity as a whole.
+
+How to find tighter upper & lower bounds in case of both Conjuctive & Disjunctive predicates?? (string I am leaving as of now)
+How bounds are used for selectivity predicate removal??
+
+# MaxSel
+Don't know max aprior on either or predicate in case of scalable databases, dimension may need to be expanded later
+Still, APL assumption says that endpoint has extreme cost,
+Fitting Piecewise APL using K-Subspace clustering (derived from K-Means) has O(n**2) complexity, can we improve upon this using Neural network based approaches?
+Is this fitting of piecewise linear function is what Srinivas is talking about, for PCM violation??
+
+# WeakDimRed
+Instead of choosing each subplan for each predicate, some plans swallows others, some predicates are removed from search for current countour, results in a seconds inflation factor due to Plan swallowing, not Anorexic Reduction like, but MSO based removal of Dim
+Plan with least Inflation factor is choosen by FPC
+
+n-Dimensional version still not clear (ye kabhi hoga kisi algo ka ya nhi, chal kya rha h jeevan m)
