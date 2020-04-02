@@ -1,11 +1,9 @@
 <<<< Notes, Improvements & Limitations from Srinivas's Thesis for Incremental Bouquet >>>>
 
+NOTES
+
 Outdated statistics, coarse summaries, attribute value independence assumptions, complex user-defined predicates, and error propagation in the query plan tree
 In ETL, statistics may actually be unavailable
-
-
-5D_Q29_DS is 5 Dim, Query 29 TPC-DS
-
 Huge compile time effort for guarantee computation, Impact of Dimensionality, Platform independence
 PB does Hypograph pruning, SB does Half-Space pruning via Spilling
 Downstream nodes are not executed, Spill node indentification should be clear
@@ -16,15 +14,15 @@ Spillbound doesn't used Anorexic reduction anywhere, however DimRed uses relaxat
 ESS is Subset of PSS, trivial predicates will also arise in case of scalable plan boquet
 
 
+IMPROVEMENTS & LIMITATIONS
+5D_Q29_DS is 5 Dim, Query 29 TPC-DS
 Origin & Terminus, how to specify, in either of AP/GP
 Total order conversion for Spill-node indentification is issue for implementation
 Removal of Repeat executions and Multiple merged execution post spill node
 Concept of Repeat execution, as it contributes significantly to bound provided by SpillBound
 Can we remove partially, "Selectivity Independence" at Contour level for selectivity discovery??
 Should we Spill at 1st node itself?? Can anything from Plan Bouquet (much partial plan execution) be still used??
-
-
-
+NEXUS too doesn't have safety check that if cost lies withing [CC,CC(1+alpha)], what if not
 
 PCM Assumption Issues, if Violated, approximation fit 
 In practice, however, we observe minor violations in monotonicity and smoothness assumptions.
@@ -46,6 +44,24 @@ Taking a finite resolution say R=100, is it ok to take 1% on Terabyte database w
 
 
 
+1.(a) Regarding the APL (Axis Parallel Linear) behavior of OCS.
+Do we need to prove that OCS follows APL in theory?
+
+1. (b) Can you explain point below
+Piecewise APL Fit of OCS
+It is important point to note here is that we do not require an accurate quantitative fit, but only an
+accurate qualitative fit – that is, the slope behavior should be adequately captured
+
+
+2. For generation of Iso-cost contours for SB and DimRed techniques, out of "NEXUS" OR "Full ESS exploration" which one is used during last experiments of SpillBound?
+
+3. Is a multi-core version of ESS constrcution written for empirical calculations?
+
+4. Is FSB somewhat utilizing what Exponential search based technique can do in NEXUS
+
+
+
+
 #### DimRed ####
 SchematicRed > MaxSelRed > WeakDimRed (Empirical Only)
 Overhead reduction, MSO minimization are two different things achieved in 3 stage pipeline
@@ -54,7 +70,7 @@ Overhead reduction, MSO minimization are two different things achieved in 3 stag
 If not accurate, tighter lower & upper bounds
 The above discussion was for individual predicates. However, in general, there may be multiple filter predicates on a base relation. In such cases, we first compute the ranges or values for each individual predicate (in the manner discussed above), and then use these individual bounds to compute bounds on the relational selectivity as a whole.
 
-How to find tighter upper & lower bounds in case of both Conjuctive & Disjunctive predicates?? (string I am leaving as of now)
+How to find tighter upper & lower bounds in case of both Conjuctive & Disjunctive predicates?? (string predicates, I am leaving as of now)
 How bounds are used for selectivity predicate removal??
 
 # MaxSel
