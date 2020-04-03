@@ -3,7 +3,7 @@
 NOTES
 
 Outdated statistics, coarse summaries, attribute value independence assumptions, complex user-defined predicates, and error propagation in the query plan tree
-In ETL, statistics may actually be unavailable
+In ETL workload, statistics may actually be unavailable
 Huge compile time effort for guarantee computation, Impact of Dimensionality, Platform independence
 PB does Hypograph pruning, SB does Half-Space pruning via Spilling
 Downstream nodes are not executed, Spill node indentification should be clear
@@ -24,7 +24,7 @@ Can we remove partially, "Selectivity Independence" at Contour level for selecti
 Should we Spill at 1st node itself?? Can anything from Plan Bouquet (much partial plan execution) be still used??
 NEXUS too doesn't have safety check that if cost lies withing [CC,CC(1+alpha)], what if not
 
-PCM Assumption Issues, if Violated, approximation fit 
+PCM Assumption Issues, if Violated, how and approximation fit is used, without knowing whole of OCS
 In practice, however, we observe minor violations in monotonicity and smoothness assumptions.
 We overcome this issue by fitting a continuous monotonic function to the actual function.
 Empirically we see that this fitting can achieved with small errors
@@ -35,31 +35,52 @@ errors, cost-modeling errors, and occasional PCM violations due to the PostgreSQ
 not being entirely cost-based in character.
 
 
-
-
 Aligned bound is achieved in restricted set of environments, I am leaving that for now
 FrugalSB is meant for Ad-hoc queries, exponential reduction, for linear increase in MSO
 What if MSO relaxation is larger than Cost doubling ratio, issues for sure in 1D FrugalSB
 Taking a finite resolution say R=100, is it ok to take 1% on Terabyte database will itself be too large an assumption
-
+Because 0 is never considered
 
 
 1.(a) Regarding the APL (Axis Parallel Linear) behavior of OCS.
 Do we need to prove that OCS follows APL in theory?
 
-1. (b) Can you explain point below
-Piecewise APL Fit of OCS
+1. (b) Can you explain point below (from your work in Srinivas' Thesis)
+*Piecewise APL Fit of OCS*
 It is important point to note here is that we do not require an accurate quantitative fit, but only an
 accurate qualitative fit – that is, the slope behavior should be adequately captured
 
+2. For generation of Iso-cost contours for SB and DimRed techniques, out of "NEXUS" OR "Full ESS exploration" which one is used during last experiments of SpillBound? Also, what are resolution values used for each n-Dimensional query (e.g., 10,000 for 1D queires, 300 fir 2D & so on)
 
-2. For generation of Iso-cost contours for SB and DimRed techniques, out of "NEXUS" OR "Full ESS exploration" which one is used during last experiments of SpillBound?
+3. During schematic removal, I am not clear on how both lower & upper bounds will be calculated in case of conjuction & disjuntion of predicates? (Lower bound on Conjuction)
 
-3. Is a multi-core version of ESS constrcution written for empirical calculations?
+4. During schematic removal, How upper & lower bounds on selectivity are used for predicate removal?
+*Quote : 6.4 Schematic Removal of Dimensions (from Srinivas' Thesis)*
+After determining the bounds of the relational selectivity, we vary the individual predicates between [0; 1], discarding any selectivity combinations that violate the relational selectivity bounds.
 
-4. Is FSB somewhat utilizing what Exponential search based technique can do in NEXUS
+5. Can it be the case that dimensions removed by MaxSelRemoval can be brought into picture in case of dynamic sized databases
+
+6. Finding partitions of OCS using K-Subspace clustering followed by Fitting Piecewise APL which has O(n**2) complexity.
+Is this fitting of piecewise linear function is what Srinivas is talking about, for PCM violation??
+
+*Quote:  3.4 Assumptions (PCM Assumption) (from Srinivas' Thesis)*
+In practice, however, we observe minor violations in monotonicity and smoothness assumptions.
+We overcome this issue by fitting a continuous monotonic function to the actual function.
+Empirically we see that this fitting can achieved with smallion errors
+
+7. Is a multi-core version of ESS constrcution written for empirical calculations?
 
 
+
+A. Any incremental 2D algorithm, will be generalizable to n-Dimensional version too
+A. Is FSB somewhat utilizing what Exponential search based technique can do in NEXUS
+B. WeakDimRed is not compilation, but execution improvement and can always be added to any incremental bouquet algoithm also
+
+Seriously, A curve fit for PCM & Smoothness assumption, it will be full space exploration itself
+Which picture? [0,1] or [0,1+delta]
+Which Distribution? Uniform or Geometric (or we can have pseudo geometric)??
+Cons of Taking Low resolution
+Lower bound of Conjunction predicates?
 
 
 #### DimRed ####
