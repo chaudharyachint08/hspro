@@ -70,9 +70,9 @@ Empirically we see that this fitting can achieved with smallion errors
 
 
 *Questions & Points to ponder into Report*
-1. Which picture? [0,1] or [0,1+1+Δ] is better for framing problem for incremental algorithm design
+1. Choice of picture of viewing changed database? [0,1] or [0,1+1+Δ] is better for framing problem for incremental algorithm design
 2. Any incremental 2D algorithm, will be generalizable to n-Dimensional version too
-3. Cons of using Low resolution (which is done in case of High dimensional ESS)
+3. Cons of using Low resolution (which is done in case of High dimensional ESS, will affect both NEXUS & Full space)
 4. Need & Design of Exponential NEXUS for generating contours
 5. Is high resolution with Exp NEXUS the only solution, can we mix Uniform & Geometric progression using slope behavior for obtaining guarantee on re-compilation complexity and bounds on MSO guarantee in Incremental bouquet algorithms
 
