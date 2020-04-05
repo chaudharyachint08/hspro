@@ -1,0 +1,48 @@
+Report Structure
+
+Abstract
+
+Introduction
+    Plan Bouquet Description & Spillbound query inspection based guarantee
+
+2 BACKGROUND
+    Notations
+        Table of Notations
+    Terminologies
+        Selectivity vs Cardinality
+        Query Predicates (Well-known & Error-Prone)
+        [x] ESS (Error Prone Selectivity Space)
+        [x] OCS(Optimal Cost Surface)
+        [x] POSP (Parametric Optimal Set of Plans)
+        Performance Metrics
+    Assumption
+        Plan Cost Monotonicity & Smoothness
+        Axis Parallel Concave
+        Axis Parallel Linear
+        Bounded Cost Growth
+        Perfect Cost Model
+        All predicates are considered to be error-prone (Conservative assumption like Selectivity Independence)
+
+3 PROBLEM FORMULATION
+    Challenge in the Repeated compilation, even one-time compilation for canned queries on static sized database
+    	Computational feasibility of Full space exploration
+    	Cons of using low and uniform distribution
+
+4 Approach to problem
+    Speeding up the compilation process itself (Issues in Old Design & Exponential NEXUS)
+        Cons of low resolution in Uniform Distribution (done for high dimensional queries, will affect both Full Space Exploration & NEXUS)
+    Improved Discretization of ESS (Geometric distribution with a proof for relaxed but bounded MSO, guaranteeing computational feasibility)
+    Incremental compilation (Extending existing ESS)
+        Using Information from previous compilation
+            Extending previous contours in Extended ESS with new Geometric distribution
+            Obtaining contours in existing ESS
+                Algorithms for Creating new contours in existing ESS, using information from past contours in existing ESS
+                Getting relaxed MSO bounds, occurred due to using information from previous contours
+                Extending incremental algorithm to n-Dimension
+        Creating Completing New contours
+
+Experiments
+
+Future work
+    Application of Dimensionality Reduction to Incremental Bouquet Maintenance
+    Relaxing Selectivity Independence for improving empirical performance of Spillbound
