@@ -42,26 +42,38 @@ Taking a finite resolution say R=100, is it ok to take 1% on Terabyte database w
 Because 0 is never considered
 
 
-1.(a) Regarding the APL (Axis Parallel Linear) behavior of OCS.
+1(a). Regarding the APL (Axis Parallel Linear) behavior of OCS.
 Do we need to prove that OCS follows APL in theory?
 
-1. (b) Can you explain point below (from your work in Srinivas' Thesis)
+1(b). Can you explain point below (from your Thesis, Sanket's work)
 *Piecewise APL Fit of OCS*
 It is important point to note here is that we do not require an accurate quantitative fit, but only an
 accurate qualitative fit – that is, the slope behavior should be adequately captured
 
-2. For generation of Iso-cost contours for SB and DimRed techniques, out of "NEXUS" OR "Full ESS exploration" which one is used during last experiments of SpillBound? Also, what are resolution values used for each n-Dimensional query (e.g., 10,000 for 1D queires, 300 fir 2D & so on)
+2(a). For generation of Iso-cost contours for SB and DimRed techniques, out of "NEXUS" OR "Full ESS exploration" which one is used during last experiments of SpillBound? Also, what are resolution values used during experiments for each n-Dimensional query (e.g., 10,000 for 1D queires, 300 fir 2D & so on)?
+
+2(b). While criticizing loss of expected improvement from NEXUS over full ESS exploration in chapter 7 of your thesis. You've mentioned that
+	(i)  If large number of contours need to be drawn, then NEXUS effectively is close to full space exploration
+	(ii) Randomized contour placement as suggested by Anshuman for fairness needs more contours to be drawn again increasing number of contours need to be drawn by NEXUS. 
+	(iii) If through domain knowledge, lower bound of selecitvity is known on any predicate, Spillbound will be able to use that knowledge, while all contours of NEXUS needs to be redrawn from scratch.
+
+	At first, I don't think this will be the case, re-drawing contours will not be necessary while using either NEXUS or full-space enumeration.
+	Also, I agree in theory NEXUS has complexity of O(M*D*(RES^D)) while Full space enumeration needs O(RES^Dim).
+	In general NEXUS has speed up of O(RES/(M*D)), but during proposal of NEXUS, a common assumption is that RES is sufficiently high such that we should be able to find a point in interval [C,(1+a)*C], for sufficiently small a like 0.05.
+
+	While for making things computationally feasible for higher dimensions like five, experiments are run at lower resolutions around 30, does it still guarantee in some way, that we will get points in interval [C, (1+a)*C]. If now how that impact of using low resolution bounded? (I have got this while reading Sriram's report, where cost deviation of contours discovered from NEXUS is also beyond 5%)
+
 
 3. During schematic removal, I am not clear on how lower bound in case of conjuction predicates can be calculated? (Even an example will work for me, a formula will be much better)
 
-4. During schematic removal, How upper & lower bounds on selectivity are used for predicate removal? I am not clear with what is mentioned in Srinivas' Thesis (mentioned below)
-*Quote : 6.4 Schematic Removal of Dimensions (from Srinivas' Thesis)*
+4. During schematic removal, How upper & lower bounds on selectivity are used for predicate removal? I am not clear with a statement that is mentioned in Your Thesis (mentioned below)
+*Quote : 6.4 Schematic Removal of Dimensions*
 After determining the bounds of the relational selectivity, we vary the individual predicates between [0, 1], discarding any selectivity combinations that violate the relational selectivity bounds.
 
-5. It be the case that dimensions removed by MaxSelRemoval need to be brought into picture in case of dynamic sized databases, which will make ESS a non-regular hypercube. Say, initial axis has selectivity [ℇ,1] which will upon scale up become [ℇ, 1+Δ]
+5. It can be the case that dimensions removed by MaxSelRemoval need to be brought into picture in case of dynamic sized databases, which will make ESS a non-regular hypercube. Say, initial axis has selectivity [ℇ,1] with geometric distribution of selectivity values on each axis, which will upon scale up become [ℇ, 1+Δ]
 
-6. Finding partitions of OCS using K-Subspace clustering (which has O(n**2) complexity) is followed by Fitting Piecewise APL to each of partition obtained. Is this fitting of piecewise linear function is what Srinivas is talking about, for handling PCM & smoothness violation in starting of his thesis??
-*Quote:  3.4 Assumptions (PCM Assumption) (from Srinivas' Thesis)*
+6. Finding partitions of OCS using K-Subspace clustering (which has O(n**2) complexity) is followed by Fitting Piecewise APL to each of partition obtained. Is this fitting of piecewise linear function is what you are talking about, for handling PCM & smoothness violation in starting of the thesis??
+*Quote:  3.4 Assumptions (PCM Assumption)*
 In practice, however, we observe minor violations in monotonicity and smoothness assumptions.
 We overcome this issue by fitting a continuous monotonic function to the actual function.
 Empirically we see that this fitting can achieved with smallion errors
@@ -71,7 +83,7 @@ Empirically we see that this fitting can achieved with smallion errors
 
 *Questions & Points to ponder into Report*
 1. Choice of picture of viewing changed database? [0,1] or [0,1+1+Δ] is better for framing problem for incremental algorithm design
-2. Any incremental 2D algorithm, will be generalizable to n-Dimensional version too
+2. Any incremental robust 2D algorithm, will be generalizable to n-Dimensional version too
 3. Cons of using Low resolution (which is done in case of High dimensional ESS, will affect both NEXUS & Full space)
 4. Need & Design of Exponential NEXUS for generating contours
 5. Is high resolution with Exp NEXUS the only solution, can we mix Uniform & Geometric progression using slope behavior for obtaining guarantee on re-compilation complexity and bounds on MSO guarantee in Incremental bouquet algorithms
