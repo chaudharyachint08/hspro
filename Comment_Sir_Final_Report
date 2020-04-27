@@ -1,0 +1,20 @@
+There are several conceptually problematic statements in your writeup that you need to think about carefully.
+
+1)  Nowhere do you ever have any dependence of MSO guarantee on Delta, how is this even possible - take the extreme case where the Delta is 10 times the current size, and then 100 times - there is no difference?  
+
+2) In end of Section 3.a, it is claimed that "This same proof can be easily extended for multi-dimension plan bouquets."  Firstly, the proof provided for 1D itself is incorrect,  but to make this clear, completely remove the 1D part and start with 2D and show the proof (claimed to be easy extension) with 2D - that should highlight the problems. Also, no clear distinction is made between ESS_orig and ESS_Delta in the notations making it hard to understand the proofs.
+
+3) It is not correct to assume that if the same plan occurs on both endpoints  to decide that the same plan operates on all points on the connecting line - such assumptions are not true in practical plan diagrams, as you would have seen in the Picasso series of papers.
+
+4) There is a mixup between MSO_g and MSO_e -  MSO_g is a conceptual guarantee, whereas you have used it for explicit evaluation on the contours.  In general, there is no clear separation between theory and experiment in the entire report which is cause for confusion.
+
+5) The cost of base filter operators is compared in a relative manner simply because the costs of the various implementation choices for these operators are all linear functions of the cardinality - therefore dividing all the values by a normalization factor does not cause any change in the cost comparisons.
+
+6) The claims made in Section 4.e that the choice of operator will not change is not correct -  selectivity gives you the *output* cardinality, cost is based primarily on the *input* cardinality.
+
+
+An alternative and different strategy for your report that will not run into the above semantic problems, and which I would highly recommend, is to just focus on a "Nexus++" design and implementation -  so, nothing to do with size changes in database, but just to say that you have a new Nexus that is empirically shown to be better than the earlier one discussed in TODS paper due to leveraging additional assumptions about cost trajectories (concave, piecewise-linear, etc.) .  
+
+Call me at noon today (9449015894) after seeing the above comments.
+
+- Jayant
