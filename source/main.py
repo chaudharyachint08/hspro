@@ -122,7 +122,7 @@ def set_cmd_arguments():
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
     parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=5) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
     parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=6) # If have to round of selectivity values during computation
-    parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # If have to round of selectivity values during computation
+    parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # Default font-size for Matplotlib plotting
     # Float Type Arguments
     parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
     parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
