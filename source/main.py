@@ -376,7 +376,7 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         if (sel, plan_id, scale) not in self.spd2c_m:
             cost_val, _ = self.get_cost_and_plan(sel, plan_id=plan_id, scale=scale)
-            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val         # Exponential Storage of |POSP|*RED**dim(EPP)
+            # self.spd2c_m[ (sel, plan_id, scale) ] = cost_val         # Exponential Storage of |POSP|*RED**dim(EPP), hence avoided
         else:
             cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
         return cost_val
