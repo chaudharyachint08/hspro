@@ -134,7 +134,6 @@ def set_cmd_arguments():
     parser.add_argument("--progression" , type=str  , dest='progression' , default='GP')
     parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
-    parser.add_argument("--plots_dir"   , type=str  , dest='plots_dir'   , default=os.path.join('.','..','bouquet_plots'  ))
     # Tuple Type Arguments
     parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  50,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
     parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
@@ -154,7 +153,7 @@ if font_size is not None:
 
 def global_path_var():
     "initial path variables"
-    global pwd, sep, val, home_dir, master_dir, plots_dir, os_lock
+    global pwd, sep, val, home_dir, master_dir, os_lock
     pwd = os.getcwd()
     sep = os.path.sep
     val = pwd.split(sep)
@@ -163,14 +162,11 @@ def global_path_var():
     else:
         home_dir = os.path.join(*val)
         master_ls = master_dir.split(sep)
-        plots_ls  = plots_dir.split(sep)
         try:
             master_ls.remove('..')
-            plots_ls.remove('..')
         except:
             pass
         master_dir = os.path.join(*master_ls)
-        plots_dir  = os.path.join(*plots_ls)
     if sep=='/':
         home_dir = sep+home_dir
     # creating a lock for os_operations
