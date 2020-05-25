@@ -57,8 +57,7 @@ hspro (Home Directory of Project) # CHECKPOINT, next directory should be r_ratio
     └── plan_format.py
 
 
-
-
+# Below Directory is not used, plots are also query wise created in bouquet_master
 ├── bouquet_plots
 │   │
 │   *
@@ -117,7 +116,7 @@ def set_cmd_arguments():
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
     # Int Type Arguments
-    parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=10)
+    parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=20) # Parallel processing via threads, in case of |CPU| logical processors
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
     parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=5) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
