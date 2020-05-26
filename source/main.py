@@ -184,7 +184,7 @@ def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
     print( *args, sep=sep, end=end, file=file, flush=flush)
     os_lock.release()
 
-def my_listdir(dir_path='.'):+
+def my_listdir(dir_path='.'):
     "Synchronization construct based listing of files in directory"
     # print(os_lock.__dict__['_semlock']._count())
     os_lock.acquire()
@@ -730,7 +730,7 @@ class ScaleVariablePlanBouquet:
                         exp_step *= 2 # Increase step size by 2 each time
                         continue_exp = True # Future attempt of Exponential search
                     else:
-                        break                
+                        break
                 if not continue_exp:
                     break
             # Initial seed value, which will explore into D-dimensional surface
@@ -739,7 +739,7 @@ class ScaleVariablePlanBouquet:
             initial_seed_plan_id = self.store_plan( self.plan(initial_seed_sel, scale=scale) )
             # Lock & local data-structures of outer function to be used
             nexus_lock = threading.Lock()
-            iad2p_m, iapd2s_m = {}, {} # Local Data Structures will be merged at end of entire contour exploration
+            iad2p_m, iapd2s_m = {}, {} # Local Data Structures will be merged to object level at end of entire contour exploration
             iad2p_m[(IC_id,0.0,scale)] = { initial_seed_plan_id }
             iapd2s_m[(IC_id,0.0,initial_seed_plan_id,scale)] = { initial_seed_sel }
             # Exploration using Initial seed in Dim dimensional space
@@ -778,7 +778,8 @@ class ScaleVariablePlanBouquet:
                                 p2s_m[next_plan_id] = {next_sel}
                             cur_ix[dim_l], cur_ix[dim_h] = x, y
                             seed_ix_ls.append( tuple(cur_ix) )
-                            if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) : # non-existence of either S(x+1) or S(y−1)
+                            # non-existence of either S(x+1) or S(y−1)
+                            if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) :
                                 break
                         # First search include both ends of 2D exploration, rest will not include first end
                         if dim_l+1 != dim_h:
@@ -1112,7 +1113,7 @@ class ScaleVariablePlanBouquet:
             if ('base_gen' not in self.exec_specific) or (not self.exec_specific['base_gen']):
                 self.exec_specific['base_gen'] = False
                 self.base_gen( scale=self.base_scale )
-            self.simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
+            self.simulation_result = self.simulate( act_sel=(sel_range_p[self.Dim][-1],)*self.Dim , scale=self.base_scale )
             self.save_maps()
             if do_plot:
                 if   self.Dim==1:
