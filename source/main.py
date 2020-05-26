@@ -113,6 +113,7 @@ def set_cmd_arguments():
     parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True ) # To generate new information, like plans, contours, points
     parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
     parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
+    parser.add_argument("--do_plot"  , type=eval , dest='do_plot'  , default=False) # To perform basic plotting for 1D and 2D ESS and contours within them
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
     # Int Type Arguments
@@ -573,7 +574,7 @@ class ScaleVariablePlanBouquet:
     ######## BOUQUET EXECUTION METHODS ########
 
     def build_posp(self, scale=None):
-        "Optimal plans over ESS, exponential time, bouquet plans also added during compilation"
+        "Optimal plans over ESS, exponential time, should be done in parallel later " # bouquet plans also added during compilation
         print('Entering BUILD_POSP')
         scale = scale if (scale is not None) else self.base_scale
         init = datetime.now()
@@ -588,8 +589,6 @@ class ScaleVariablePlanBouquet:
             if (scale, plan_id) not in self.dp2t_m:
                 self.dp2t_m[(scale, plan_id)] = 0
             self.dp2t_m[(scale, plan_id)] += 1
-            # count += 1
-            # print(count)
         self.exec_specific['build_posp'] = True
         print('Exiting BUILD_POSP', datetime.now()-init )
 
@@ -628,8 +627,8 @@ class ScaleVariablePlanBouquet:
         for ix in range(self.random_p_IC_count):
             self.id2c_m[(ix,scale)] = self.C_max / ( self.random_p_r_ratio**(self.random_p_IC_count-(ix+1)) )
         # Below steps are to be done using NEXUS for other than last contours
-        self.iad2p_m[(self.random_p_IC_count-1,0.0,scale)]          = { plan_max_id }
-        self.iapd2s_m[(self.random_p_IC_count-1,0.0,plan_max_id,scale)] = { sel_max }
+        self.iad2p_m [(self.random_p_IC_count-1,0.0,scale)]             = { plan_max_id }
+        self.iapd2s_m[(self.random_p_IC_count-1,0.0,plan_max_id,scale)] = { sel_max } # This is exponential in space, and not useful post ANOREXIC Reduction
         self.exec_specific['base_gen'] = True
         print('Exiting BASE_GEN')
 
@@ -668,13 +667,13 @@ class ScaleVariablePlanBouquet:
             self.obj_lock.acquire()
             self.aed2m_m[(self.anorexic_lambda,IC_id,max_eating_plan_id,scale)]  = anorexic_max_cost / self.id2c_m[(IC_id,scale)]
             self.iapd2s_m[(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)] = points_gone
-            self.save_points(IC_id,0.0,                 max_eating_plan_id,scale)
-            self.save_points(IC_id,self.anorexic_lambda,max_eating_plan_id,scale)
+            self.save_points(IC_id,0.0,                 max_eating_plan_id,scale) # This map will be cleared after being stored on disk
+            self.save_points(IC_id,self.anorexic_lambda,max_eating_plan_id,scale) # This map will be cleared after being stored on disk
             self.obj_lock.release()
         self.obj_lock.acquire()
         self.iad2p_m[(IC_id, self.anorexic_lambda, scale)] = reduced_plan_set
         for plan_id in org_plans- reduced_plan_set:
-            self.save_points(IC_id,0.0,plan_id,scale)
+            self.save_points(IC_id,0.0,plan_id,scale) # This map will be cleared after being stored on disk
         self.obj_lock.release()
         print('Exiting ANOREXIC',IC_id,len(inspect.stack(0)),threading.current_thread())
 
@@ -1133,17 +1132,19 @@ class ScaleVariablePlanBouquet:
                 self.base_gen( scale=self.base_scale )
             self.simulation_result = self.simulate( act_sel=(sel_range_p[len(self.epp)][-1],)*len(self.epp) , scale=self.base_scale )
             self.save_maps()
-            if   self.Dim==1:
-                self.plot_contours(do_posp=True,  scale=scale)
-            elif self.Dim==2:
-                self.plot_contours(do_posp=False, scale=scale)
-
-            # self.evaluate()
+            if do_plot:
+                if   self.Dim==1:
+                    self.plot_contours(do_posp=True,  scale=scale)
+                elif self.Dim==2:
+                    self.plot_contours(do_posp=False, scale=scale)
+            # self.evaluate(mode='p', scale=scale) # Function to compute all Performance metrics
 
     def product_cover(self, sel_1, sel_2, dual=False):
         "Check if either of points in ESS covers each other, +ve if in ascending order"
         ls_1, ls_2 = np.array(sel_1), np.array(sel_2)
-        if   (ls_1 <= ls_2).all(): # ls_1 is covered by ls_2
+        if   (ls_1 == ls_2).all(): # both points are same
+            return 0
+        elif (ls_1 <= ls_2).all(): # ls_1 is covered by ls_2
             return 1
         elif dual and (ls_1 >= ls_2).all(): # ls_1 covers ls_2
             return -1
