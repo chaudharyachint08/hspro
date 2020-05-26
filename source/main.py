@@ -109,8 +109,8 @@ parser = argparse.ArgumentParser()
 def set_cmd_arguments():
     "set command-line arguments"
     # Bool Type Arguments
-    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=True) # Whether to include point of zero-selectivity, for mathematical convenience 
-    parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True) # To generate new information, like plans, contours, points
+    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=True ) # Whether to include point of zero-selectivity, for mathematical convenience 
+    parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True ) # To generate new information, like plans, contours, points
     parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
     parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
@@ -119,7 +119,7 @@ def set_cmd_arguments():
     parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=20) # Parallel processing via threads, in case of |CPU| logical processors
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
-    parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=5) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
+    parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
     parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=6) # If have to round of selectivity values during computation
     parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # Default font-size for Matplotlib plotting
     # Float Type Arguments
@@ -183,7 +183,7 @@ def my_print( *args, sep=' ', end='\n', file=sys.stdout, flush=False):
     print( *args, sep=sep, end=end, file=file, flush=flush)
     os_lock.release()
 
-def my_listdir(dir_path='.'):
+def my_listdir(dir_path='.'):+
     "Synchronization construct based listing of files in directory"
     # print(os_lock.__dict__['_semlock']._count())
     os_lock.acquire()
@@ -324,7 +324,6 @@ class ScaleVariablePlanBouquet:
         self.aed2aed_m = {} # (anorexic_lambda, IC_id, plan_id, scale) useful for CSI Algorithms storage, checking if that execution has already occured in lower IC-contours
         self.aed2m_m   = {} # (anorexic_lambda, IC_id, plan_id, scale) : multiplicity introduced due to anorexic reduction
 
-
     ######## DATA-BASE CONNECTION METHODS ########
     
     def get_cost_and_plan(self, sel, plan_id=None, scale=None): # return (result_cost, result_plan)
@@ -361,7 +360,6 @@ class ScaleVariablePlanBouquet:
                     break
         return (result_cost, result_plan)
 
-
     ######## ABSTRACTION OVER DATA-BASE CONNECTION ########   
 
     def plan(self, sel, scale=None): # return plan_val
@@ -379,7 +377,6 @@ class ScaleVariablePlanBouquet:
         else:
             cost_val = self.spd2c_m[ (sel, plan_id, scale) ]
         return cost_val
-
 
     ######## PLAN PROCESSING, SAVING & LOADING METHOD USING OperatorNode CLASS ########
 
@@ -400,7 +397,6 @@ class ScaleVariablePlanBouquet:
             self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
             self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
         return self.r2p_m[plan_serial]
-
 
     ######## PERFORMANCE METRICS METHODS ########
 
@@ -437,7 +433,7 @@ class ScaleVariablePlanBouquet:
             for act_sel in epp_iterator:
                 cost_ls = [ self.cost(act_sel,plan_id=plan_id,scale=scale)                             for plan_id in posp_ls ]
                 freq_ls = [ (self.dp2t_m[(scale,plan_id)] if (scale,plan_id) in self.dp2t_m else 0)    for plan_id in posp_ls ]
-                average_cost = ( float( np.dot(cost_ls, freq_ls) ) / (len(sel_range_o[len(self.epp)])**len(self.epp)) )
+                average_cost = float( np.dot(cost_ls, freq_ls) ) / (len(sel_range_o[self.Dim])**self.Dim)
                 result += ( average_cost / self.cost(act_sel, scale=scale) )
             return result / (len(sel_range_o[self.Dim])**self.Dim)
         else: # Bouquet Style Metric
@@ -448,7 +444,6 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         epp_iterator = itertools.product(*[ sel_range_o[self.Dim] ]*self.Dim)
         return max(  ( self.SubOpt(act_sel, -1, scale=scale, bouquet=True) / self.WorstSubOpt(act_sel, scale=scale) ) for act_sel in epp_iterator  ) - 1
-
 
     ######## MAPS SAVING & RE-LOADING METHODS FOR RECOMPUTATION AVOIDANCE ON DIFFERENT INVOCATIONS ########    
 
@@ -484,13 +479,13 @@ class ScaleVariablePlanBouquet:
         cur_val.update(prev_val)
         # print((IC_id,anorexic_lambda,plan_id,scale))
         # print(cur_val)
-        self.save_obj(   cur_val , os.path.join( self.maps_dir, ','.join(tuple(str(x) for x in (IC_id,anorexic_lambda,plan_id,scale)))  )  )
+        self.save_obj(   cur_val , os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  )  )
         self.iapd2s_m[(IC_id,anorexic_lambda,plan_id,scale)] = set()
 
     def load_points(self,IC_id,anorexic_lambda,plan_id,scale):
         # print('load_points', (IC_id,anorexic_lambda,plan_id,scale))
-        if os.path.isfile( os.path.join( self.maps_dir, ','.join(tuple(str(x) for x in (IC_id,anorexic_lambda,plan_id,scale)))  ) ):
-            old_val = self.load_obj( os.path.join( self.maps_dir, ','.join(tuple(str(x) for x in (IC_id,anorexic_lambda,plan_id,scale)))  ) )
+        if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
+            old_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
         else:
             old_val = set()
         return old_val
@@ -498,8 +493,7 @@ class ScaleVariablePlanBouquet:
     def save_maps(self):
         "Save present maps values into objects for repeatable execution over difference simulation"
         print('Entering SAVE_MAPS')
-        if not os.path.isdir(self.maps_dir):
-            os.makedirs(self.maps_dir)
+        os.makedirs(self.maps_dir, exist_ok=True)
         self.save_obj( self.exec_specific , os.path.join(self.maps_dir, 'exec_specific' ) )
         self.save_obj( self.p2f_m         , os.path.join(self.maps_dir, 'p2f_m'     ) )
         self.save_obj( self.f2r_m         , os.path.join(self.maps_dir, 'f2r_m'     ) )
@@ -508,7 +502,7 @@ class ScaleVariablePlanBouquet:
         self.save_obj( self.spd2c_m       , os.path.join(self.maps_dir, 'spd2c_m'   ) )
         self.save_obj( self.id2c_m        , os.path.join(self.maps_dir, 'id2c_m'    ) )
         self.save_obj( self.iad2p_m       , os.path.join(self.maps_dir, 'iad2p_m'   ) )
-        # self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) )
+        # self.save_obj( self.iapd2s_m      , os.path.join(self.maps_dir, 'iapd2s_m'  ) ) # Has separate methods "save_points()" and "load_points()"
         self.save_obj( self.d2o_m         , os.path.join(self.maps_dir, 'd2o_m'     ) )
         self.save_obj( self.dp2t_m        , os.path.join(self.maps_dir, 'dp2t_m'    ) )
         self.save_obj( self.aed2aed_m     , os.path.join(self.maps_dir, 'aed2aed_m' ) )
@@ -539,12 +533,18 @@ class ScaleVariablePlanBouquet:
         if new_info:
             try:
                 shutil.rmtree(self.maps_dir)
+            except:
+                pass
+            try:
                 shutil.rmtree( os.path.join( home_dir,master_dir,self.benchmark,'plans','xml',  self.query_id) )
+            except:
+                pass
+            try:
                 shutil.rmtree( os.path.join( home_dir,master_dir,self.benchmark,'plans','json', self.query_id) )
             except:
                 pass
         if not os.path.isdir( self.maps_dir ):
-            os.makedirs( self.maps_dir )
+            os.makedirs( self.maps_dir, exist_ok=True )
         else: # if os.path.isdir(self.maps_dir):
             self.p2f_m     = self.load_obj( os.path.join( self.maps_dir,'p2f_m'     ) )
             self.f2r_m     = self.load_obj( os.path.join( self.maps_dir,'f2r_m'     ) )
@@ -553,7 +553,7 @@ class ScaleVariablePlanBouquet:
             self.spd2c_m   = self.load_obj( os.path.join( self.maps_dir,'spd2c_m'   ) )
             self.id2c_m    = self.load_obj( os.path.join( self.maps_dir,'id2c_m'    ) )
             self.iad2p_m   = self.load_obj( os.path.join( self.maps_dir,'iad2p_m'   ) )
-            # self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) )
+            # self.iapd2s_m  = self.load_obj( os.path.join( self.maps_dir,'iapd2s_m'  ) ) # Has separate methods "save_points()" and "load_points()"
             self.d2o_m     = self.load_obj( os.path.join( self.maps_dir,'d2o_m'     ) )
             self.dp2t_m    = self.load_obj( os.path.join( self.maps_dir,'dp2t_m'    ) )
             self.aed2aed_m = self.load_obj( os.path.join( self.maps_dir,'aed2aed_m' ) )
@@ -565,7 +565,7 @@ class ScaleVariablePlanBouquet:
                 new_val = (self.exec_specific['random_p_d']*exec_specific['random_p_d']) // math.gcd(self.exec_specific['random_p_d'],exec_specific['random_p_d'])
                 reindex_m = self.reindex(self, old_val, new_val)
                 self.iad2p_m, self.id2c_m, self.iapd2s_m = self.remap(self.iad2p_m,reindex_m,0), self.remap(self.id2c_m,reindex_m,0), self.remap(self.iapd2s_m,reindex_m,0)
-                self.aed2aed_m, self.aed2m_m = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2aed_m,reindex_m,1)
+                self.aed2aed_m, self.aed2m_m = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2m_m,reindex_m,1)
                 self.exec_specific['random_p_d'] = new_val
         print('Exiting LOAD_MAPS')
 
