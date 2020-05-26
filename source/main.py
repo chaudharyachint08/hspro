@@ -808,34 +808,32 @@ class ScaleVariablePlanBouquet:
             exploration(initial_seed_ix, self.Dim)
             # Merging to Object Data-structures after exploration is complete
             self.obj_lock.acquire()
-            for key in iad2p_m:
-                self.iad2p_m[key] = iad2p_m[key]
-            for key in iapd2s_m:
-                self.iapd2s_m[key] = iapd2s_m[key]
-            for plan_id_ls in iad2p_m.values():
+            self.iad2p_m .update(iad2p_m )
+            self.iapd2s_m.update(iapd2s_m)
+            for plan_id_ls in iad2p_m.values(): # IC_ix given in key is not used, as iapd2s_m is local to each NEXUS
                 self.d2o_m[scale].update( plan_id_ls )
                 for plan_id in plan_id_ls:
-                    if (scale, plan_id) not in self.dp2t_m:
-                        self.dp2t_m[(scale, plan_id)] = 0
+                    if (scale, plan_id) not in self.dp2t_m: # Entries in this object level dictionary is created here
+                        self.dp2t_m[(scale, plan_id)] = 0 # Useful for ASO computation, but should not be done via NEXUS, but POSP construction
             self.obj_lock.release()
+
         # Map generation for CSI & Anorexic Reduction cost-multiplicity
         self.obj_lock.acquire()
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         for plan_id in org_plans: # Identity mapping for cost-multiplicity without ANOREXIC reduction  & CSI
             self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
         self.obj_lock.release()
+
         # Calling anorexic reduction, and associated map generation
-        if self.anorexic_lambda:
-            self.anorexic_reduction(IC_id, scale=scale)
-            reduced_plans = self.iad2p_m[(IC_id, self.anorexic_lambda, scale)]
+        if not self.anorexic_lambda: # when self.anorexic_lambda==0.0
             self.obj_lock.acquire()
-            for plan_id in reduced_plans: # Identity mapping for CSI
-                self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
+            self.save_points(IC_id,self.anorexic_lambda,plan_id,scale) # Saving points on Disk
             self.obj_lock.release()
         else:
+            self.anorexic_reduction(IC_id, scale=scale)
             self.obj_lock.acquire()
-            for plan_id in self.iad2p_m[(IC_id, 0.0, scale)]:
-                self.save_points(IC_id,0.0,plan_id,scale)
+            for plan_id in self.iad2p_m[(IC_id, self.anorexic_lambda, scale)]: # Identity mapping for CSI
+                self.aed2aed_m[(self.anorexic_lambda,IC_id,plan_id,scale)] = (self.anorexic_lambda,IC_id,plan_id,scale)
             self.obj_lock.release()
         print('Exiting NEXUS',IC_id,len(inspect.stack(0)),threading.current_thread())
 
