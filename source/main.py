@@ -840,32 +840,14 @@ class ScaleVariablePlanBouquet:
 
 
     def simulate(self, act_sel, scale=None):
-        "Simulating Plan-Bouquet Execution under Idea Cost model assumption"
+        "Simulating Plan-Bouquet Execution under Ideal Cost model assumption"
         print('Entered SIMULATION')
         scale = scale if (scale is not None) else self.base_scale
         # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
-        random_p_val = self.exec_specific['random_p_d']-1
-        IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
-        # Executing NEXUS Algorithm for multi-dimensions
-        # print(IC_indices)
-        nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
-        # Boolean indecxing to check if previous contour is explored in any past invocation
         if 'nexus' not in self.exec_specific:
             self.exec_specific['nexus'] = {}
         if scale not in self.exec_specific['nexus']:
             self.exec_specific['nexus'][scale] = {}
-        for IC_ix in IC_indices:
-            if IC_ix not in self.exec_specific['nexus'][scale]:
-                self.exec_specific['nexus'][scale][IC_ix] = False
-        # Launching construction of all Ico-cost contours
-        for ix, nexus_thread in enumerate(nexus_thread_ls):
-            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
-                nexus_thread.start()
-        # Waiting for construction of all Ico-cost contours
-        for ix, nexus_thread in enumerate(nexus_thread_ls):
-            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
-                nexus_thread.join()
-                self.exec_specific['nexus'][scale][IC_indices[ix]] = True
         # Randomly or Deterministicly selecting set of contours to be considered in plan bouquet
         if random_p:
             random_p_val = np.random.randint(self.exec_specific['random_p_d'])
@@ -908,11 +890,11 @@ class ScaleVariablePlanBouquet:
                 np.random.shuffle(plan_ls)
             for plan_id in plan_ls:
                 _, cover_IC_ix, cover_plan_id, _ = self.aed2aed_m[(self.anorexic_lambda,IC_ix,plan_id,scale)]
-                if zagged_bool[cover_IC_ix][cover_plan_id] is False:
+                if (simulation_result['done'] is False) and (zagged_bool[cover_IC_ix][cover_plan_id] is False):
                     cost_val, cost_threshold = self.cost(act_sel, plan_id=cover_plan_id, scale=scale), self.id2c_m[(cover_IC_ix,scale)]*self.aed2m_m[(self.anorexic_lambda, cover_IC_ix, cover_plan_id, scale)]
                     # print('IC_ix = {} , plan_id = {}'.format(cover_IC_ix,cover_plan_id))
                     # print(cost_val, cost_threshold)
-                    if cost_val <= cost_threshold:
+                    if cost_val <= cost_threshold: # If plan execution reaches completition within assigned cost budget
                         if simulation_result['done'] is False:
                             simulation_result['done'] = True
                             simulation_result['termination-cost'] += cost_val
