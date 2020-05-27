@@ -8,6 +8,16 @@ Syntax for Plan Enforcing
 SQL_QUERY fpc XML_PLAN_PATH
 
 
+CHECKPOINT Add to simulation_result
+FPC calls = |IC Plan Cardinality|*|Points on the contour|
+Used optimizer calls = |Points on the contour|
+NEXUS
+    Wasted optimizer calls = Calls made from IF condition, close to line 764
+NEXUS++ (Same as NEXUS, with different exploration function)
+    We will see later after implementation of Exploration++ will be done
+
+
+
 hspro (Home Directory of Project) # CHECKPOINT, next directory should be r_ratio value, in which all maps for re-excution can be stored
 .
 ├── bouquet_master
@@ -817,13 +827,16 @@ class ScaleVariablePlanBouquet:
                         self.dp2t_m[(scale, plan_id)] = 0 # Useful for ASO computation, but should not be done via NEXUS, but POSP construction
             self.obj_lock.release()
 
-        # Map generation for CSI & Anorexic Reduction cost-multiplicity
         self.obj_lock.acquire()
+        # Map generation for CSI & Anorexic Reduction cost-multiplicity
         org_plans = self.iad2p_m[(IC_id, 0.0, scale)]
         for plan_id in org_plans: # Identity mapping for cost-multiplicity without ANOREXIC reduction  & CSI
             self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
+        # Counting |Essential optimizer calls| and |FPC Calls|
+        simulation_result['Essential_Optimizer_calls'][IC_id] = sum( len(self.iapd2s_m[(IC_id,0.0,plan_id,scale)]) for plan_id in self.iad2p_m[(IC_id,0.0,scale)] )
+        simulation_result['FPC_calls']                [IC_id] = (len(self.iad2p_m[(IC_id,0.0,scale)])-1)*simulation_result['Essential_Optimizer_calls']
+        simulation_result['Wasted_Optimizer_calls']   [IC_id] = wasted_optimizer_calls # CHECKPOINT
         self.obj_lock.release()
-
         # Calling anorexic reduction, and associated map generation
         if not self.anorexic_lambda: # when self.anorexic_lambda==0.0
             self.obj_lock.acquire()
@@ -842,6 +855,8 @@ class ScaleVariablePlanBouquet:
         "Simulating Plan-Bouquet Execution under Ideal Cost model assumption"
         print('Entered SIMULATION')
         scale = scale if (scale is not None) else self.base_scale
+        simulation_result = {} # This will contain MSO, termination cost, |Optimizer calls| and |FPC calls| made
+        simulation_result['Essential_Optimizer_calls'], simulation_result['Wasted_Optimizer_calls'], simulation_result['FPC_calls'] = {}, {}, {}
         # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
         if 'nexus' not in self.exec_specific:
             self.exec_specific['nexus'] = {}
@@ -878,7 +893,6 @@ class ScaleVariablePlanBouquet:
             zagged_bool[IC_ix] = {}
             for plan_id in self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]:
                 zagged_bool[IC_ix][plan_id] = False
-        simulation_result = {}
         # Simulating Execution using Plan_bouquet
         total_cost  = 0
         simulation_result['termination-cost'], simulation_result['done'], simulation_result['MSO_k'] = 0, False, {}
@@ -911,7 +925,7 @@ class ScaleVariablePlanBouquet:
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
 
         simulation_result['MSO_e'] = max( simulation_result['MSO_k'].values() )
-        simulation_result['MSO_g'] = ((r_ratio**2)/(r_ratio-1)) * max( len(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]) for IC_ix in IC_indices  ) # CHECKPOINT
+        simulation_result['MSO_g'] = ((r_ratio**2)/(r_ratio-1)) * max( len(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]) for IC_ix in IC_indices  )
         print('Exiting SIMULATION')
         return simulation_result
 
