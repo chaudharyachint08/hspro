@@ -389,9 +389,9 @@ class ScaleVariablePlanBouquet:
             xml_plan_path  = os.path.join( home_dir,master_dir,self.benchmark,'plans','xml',  self.query_id)
             json_plan_path = os.path.join( home_dir,master_dir,self.benchmark,'plans','json', self.query_id)
             if not os.path.isdir(xml_plan_path):
-                os.makedirs(xml_plan_path,exist_ok=True)
+                os.makedirs( xml_plan_path , exist_ok=True )
             if not os.path.isdir(json_plan_path):
-                os.makedirs(json_plan_path,exist_ok=True)
+                os.makedirs( json_plan_path, exist_ok=True )
             plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
             with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
                 f.write( xml_string )
@@ -909,7 +909,9 @@ class ScaleVariablePlanBouquet:
             else:
                 simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / min(prev_IC_cost_ls)
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
-            simulation_result['MSO'] = max( simulation_result['MSO_k'].values() )
+
+        simulation_result['MSO_e'] = max( simulation_result['MSO_k'].values() )
+        simulation_result['MSO_g'] = ((r_ratio**2)/(r_ratio-1)) * max( len(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]) for IC_ix in IC_indices  ) # CHECKPOINT
         print('Exiting SIMULATION')
         return simulation_result
 
