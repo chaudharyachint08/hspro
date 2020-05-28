@@ -701,6 +701,7 @@ class ScaleVariablePlanBouquet:
         The end of this recursive routine is marked by the non-existence of either S(x+1) or S(y−1) in the ESS grid.
         '''
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
+        wasted_optimizer_calls = 0
         if IC_id != (self.random_p_IC_count-1): # Last contour is specially built during base_gen
             lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
             for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
@@ -755,7 +756,7 @@ class ScaleVariablePlanBouquet:
             # Exploration using Initial seed in Dim dimensional space
             def exploration(org_seed_ix, total_dim):
                 "Nested function for exploration using seed and contour generation"
-                nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock
+                nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
                 print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
                 if total_dim >= 1 :
                     dim_h = total_dim-1
@@ -778,6 +779,9 @@ class ScaleVariablePlanBouquet:
                                 next_ix[dim_l] += 1
                                 next_sel = self.build_sel(next_ix)
                                 cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                                nexus_lock.acquire()
+                                wasted_optimizer_calls += 1
+                                nexus_lock.release()
                             else:
                                 # S = S(y−1)
                                 y -= 1
@@ -835,7 +839,7 @@ class ScaleVariablePlanBouquet:
         # Counting |Essential optimizer calls| and |FPC Calls|
         simulation_result['Essential_Optimizer_calls'][IC_id] = sum( len(self.iapd2s_m[(IC_id,0.0,plan_id,scale)]) for plan_id in self.iad2p_m[(IC_id,0.0,scale)] )
         simulation_result['FPC_calls']                [IC_id] = (len(self.iad2p_m[(IC_id,0.0,scale)])-1)*simulation_result['Essential_Optimizer_calls']
-        simulation_result['Wasted_Optimizer_calls']   [IC_id] = wasted_optimizer_calls # CHECKPOINT
+        simulation_result['Wasted_Optimizer_calls']   [IC_id] = wasted_optimizer_calls
         self.obj_lock.release()
         # Calling anorexic reduction, and associated map generation
         if not self.anorexic_lambda: # when self.anorexic_lambda==0.0
@@ -948,8 +952,7 @@ class ScaleVariablePlanBouquet:
         "Plotting iso-cost contours up to 3 dimensions"
         print('Entered PLOTTING')
         scale = scale if (scale is not None) else self.base_scale
-        if not os.path.isdir( self.plots_dir ):
-            os.makedirs( self.plots_dir )
+        os.makedirs( self.plots_dir, exist_ok=True )
         if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
             random_p_val = self.exec_specific['random_p_d']-1
             IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
