@@ -296,7 +296,7 @@ class ScaleVariablePlanBouquet:
                 self.epp, self.epp_dir = [], []
                 for line in f.readlines():
                     line = line.strip()
-                    if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
+                    if line and line[0]!='#': # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
                         line = line.split('|') # Below picks EPP from file line, if not commented, also direction, either direction of cost monotonicity
                         epp_line, epp_dir  = line[0].strip(), (int(line[1].strip()) if len(line)>1 else 1)
                         if not epp_line.startswith('--'):
