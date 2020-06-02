@@ -311,7 +311,7 @@ class ScaleVariablePlanBouquet:
         else:
             self.bouquet_runnable = True if len(self.epp) else False
         self.exec_specific = {}
-        self.exec_specific['random_p_d'] = random_p_d
+        self.exec_specific['random_p_d'] = random_p_d if random_p else 1
         self.anorexic_lambda = anorexic_lambda if anorexic else 0.0
         self.obj_lock = threading.Lock() # Threading lock to provide exclusive write access of object-wide variables
         'Naming conventions of maps for saving compilation and other computation over multiple invocation'
@@ -599,7 +599,7 @@ class ScaleVariablePlanBouquet:
             if (scale, plan_id) not in self.dp2t_m:
                 self.dp2t_m[(scale, plan_id)] = 0
             self.dp2t_m[(scale, plan_id)] += 1
-        self.exec_specific['build_posp'] = True
+        self.exec_specific[scale]['build_posp'] = True
         print('Exiting BUILD_POSP', datetime.now()-init )
 
     def build_sel(self, sel_ix_ls, mode='p'):
@@ -639,7 +639,7 @@ class ScaleVariablePlanBouquet:
         # Below steps are to be done using NEXUS for other than last contours
         self.iad2p_m [(self.random_p_IC_count-1,0.0,scale)]             = { plan_max_id }
         self.iapd2s_m[(self.random_p_IC_count-1,0.0,plan_max_id,scale)] = { sel_max } # This is exponential in space, and not useful post ANOREXIC Reduction
-        self.exec_specific['base_gen'] = True
+        self.exec_specific[scale]['base_gen'] = True
         print('Exiting BASE_GEN')
 
     def anorexic_reduction(self, IC_id, scale=None):
@@ -862,32 +862,30 @@ class ScaleVariablePlanBouquet:
         simulation_result = {} # This will contain MSO, termination cost, |Optimizer calls| and |FPC calls| made
         simulation_result['Essential_Optimizer_calls'], simulation_result['Wasted_Optimizer_calls'], simulation_result['FPC_calls'] = {}, {}, {}
         # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
-        if 'nexus' not in self.exec_specific:
-            self.exec_specific['nexus'] = {}
-        if scale not in self.exec_specific['nexus']:
-            self.exec_specific['nexus'][scale] = {}
+        if 'nexus' not in self.exec_specific[scale]:
+            self.exec_specific[scale]['nexus'] = {}
         # Randomly or Deterministicly selecting set of contours to be considered in plan bouquet
         if random_p:
             random_p_val = np.random.randint(self.exec_specific['random_p_d'])
         else:
-            random_p_val = self.exec_specific['random_p_d']-1
+            random_p_val = 0
         IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
         print(IC_indices)
         # Executing NEXUS Algorithm for multi-dimensions
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
         # Boolean indecxing to check if previous contour is explored in any past invocation
         for IC_ix in IC_indices:
-            if IC_ix not in self.exec_specific['nexus'][scale]:
-                self.exec_specific['nexus'][scale][IC_ix] = False
+            if IC_ix not in self.exec_specific[scale]['nexus']:
+                self.exec_specific[scale]['nexus'][IC_ix] = False
         # Launching construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
-            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+            if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
                 nexus_thread.start()
         # Waiting for construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
-            if not self.exec_specific['nexus'][scale][IC_indices[ix]]:
+            if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
                 nexus_thread.join()
-                self.exec_specific['nexus'][scale][IC_indices[ix]] = True
+                self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
         # CSI algorithm, for further reducing effective plan density on each contour
         if covering:
             self.covering_sequence(scale=scale)
@@ -939,8 +937,8 @@ class ScaleVariablePlanBouquet:
         if   mode=='p': # Evaluating Plan Bouquet
             MSO, ASO, MH = self.MaxSubOpt(scale,bouquet=True), self.AvgSubOpt(scale,bouquet=True), self.MaxHarm(scale)
         elif mode=='o': # Evaluating Native Optimizer
-            if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
-                self.exec_specific['build_posp'] = False
+            if ('build_posp' not in self.exec_specific[scale]) or (not self.exec_specific[scale]['build_posp']):
+                self.exec_specific[scale]['build_posp'] = False
                 self.build_posp(scale)
             MSO, ASO, MH = self.MaxSubOpt(scale,bouquet=False), self.AvgSubOpt(scale,bouquet=False), None
         print('Evaluation of {} is'.format('Plan Bouquet' if mode=='p' else 'Native Optimizer'))
@@ -973,8 +971,8 @@ class ScaleVariablePlanBouquet:
                         plan_handle = plt.scatter( X_ls , Y_ls, c = list(mcolors.TABLEAU_COLORS.keys())[plan_id%len(mcolors.TABLEAU_COLORS)] , s=None )
                         p2h_m[plan_id] = plan_handle
                 if do_posp: # Merging Cost daigram of each plan Bouqet diagram
-                    if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
-                        self.exec_specific['build_posp'] = False
+                    if ('build_posp' not in self.exec_specific[scale]) or (not self.exec_specific[scale]['build_posp']):
+                        self.exec_specific[scale]['build_posp'] = False
                         self.build_posp(scale)
                     p2cl_m = {} # Cost list for entire selectivity space for each plan stored here
                     # Finding Plan Diagram of optimal plans at each location in ESS
@@ -1009,8 +1007,8 @@ class ScaleVariablePlanBouquet:
                 Y_tck = self.sel_range_o_inc if self.epp_dir[1]>0 else self.sel_range_o_dec
                 if do_posp: # Created 3D plot of cost & 2D plan diagram
                     mX, mY = np.meshgrid(X_tck, Y_tck)
-                    if ('build_posp' not in self.exec_specific) or (not self.exec_specific['build_posp']):
-                        self.exec_specific['build_posp'] = False
+                    if ('build_posp' not in self.exec_specific[scale]) or (not self.exec_specific[scale]['build_posp']):
+                        self.exec_specific[scale]['build_posp'] = False
                     ess_plan_diagram, ess_cost_diagram = np.zeros((self.resolution_o,)*self.Dim), np.ones((self.resolution_o,)*self.Dim)*np.inf
                     for plan_id in self.d2o_m[scale]:
                         epp_ix_iterator = itertools.product(*[ list(range(self.resolution_o)) ]*self.Dim)
@@ -1127,8 +1125,8 @@ class ScaleVariablePlanBouquet:
             if scale not in self.exec_specific:
                 self.exec_specific[scale] = {}
             self.load_maps()
-            if ('base_gen' not in self.exec_specific) or (not self.exec_specific['base_gen']):
-                self.exec_specific['base_gen'] = False
+            if ('base_gen' not in self.exec_specific[scale]) or (not self.exec_specific[scale]['base_gen']):
+                self.exec_specific[scale]['base_gen'] = False
                 self.base_gen( scale=self.base_scale )
             self.simulation_result = self.simulate( act_sel=(sel_range_p[self.Dim][-1],)*self.Dim , scale=self.base_scale )
             self.save_maps()
@@ -1187,6 +1185,7 @@ class ScaleVariablePlanBouquet:
             3. If execution lies more than contour apart, explicit check only if transitive is non-existent
         '''
         pass
+
     def covering_sequence(self):
         "Step 3: Find Plans on each Iso-cost surface"
         '''
@@ -1230,8 +1229,6 @@ if __name__=='__main__':
         # obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
         
 
-    # obj = obj_ls[0]
-    # run(obj)
 
     # Serial Execution, each query at a time, no multi-process for different queries, while multi-threading still there
     for obj in obj_ls:
