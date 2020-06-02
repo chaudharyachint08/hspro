@@ -146,7 +146,7 @@ def set_cmd_arguments():
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
     # Tuple Type Arguments
     parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  50,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 300,  50,  20, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(5000, 300,  70,  30, 15) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
     parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
@@ -156,7 +156,7 @@ set_cmd_arguments()
 
 if font_size is not None:
     plt.rcParams.update({'font.size': font_size})
-
+ 
 
 
 ######## GLOBAL DATA-STRUCTURES BEGINS ########
@@ -168,9 +168,9 @@ def global_path_var():
     sep = os.path.sep
     val = pwd.split(sep)
     if 'source' in val:
-        home_dir = os.path.join(*val[:-1])
+        home_dir  = os.path.join(*val[:-1])
     else:
-        home_dir = os.path.join(*val)
+        home_dir  = os.path.join(*val)
         master_ls = master_dir.split(sep)
         try:
             master_ls.remove('..')
@@ -296,10 +296,10 @@ class ScaleVariablePlanBouquet:
                 self.epp, self.epp_dir = [], []
                 for line in f.readlines():
                     line = line.strip()
-                    if line and line[0]!='#': # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
-                        line = line.split('|') # Below picks EPP from file line, if not commented, also direction, either direction of cost monotonicity
-                        epp_line, epp_dir  = line[0].strip(), (int(line[1].strip()) if len(line)>1 else 1)
-                        if not epp_line.startswith('--'):
+                    if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
+                        if not (epp_line.startswith('--') or epp_line.startswith('#')): # '#' and '--' are two possible comments on EPP
+                            line = line.split('|') # Below picks EPP from file line, if not commented, also direction, either direction of cost monotonicity
+                            epp_line, epp_dir  = line[0].strip(), (int(line[1].strip()) if len(line)>1 else 1)
                             self.epp.append( epp_line )
                             self.epp_dir.append( epp_dir )
                 self.Dim = len(self.epp)
@@ -574,9 +574,9 @@ class ScaleVariablePlanBouquet:
             if self.exec_specific['random_p_d'] != exec_specific['random_p_d']:
                 old_val = exec_specific['random_p_d']
                 new_val = (self.exec_specific['random_p_d']*exec_specific['random_p_d']) // math.gcd(self.exec_specific['random_p_d'],exec_specific['random_p_d'])
-                reindex_m = self.reindex(self, old_val, new_val)
+                reindex_m                                = self.reindex(self, old_val, new_val)
                 self.iad2p_m, self.id2c_m, self.iapd2s_m = self.remap(self.iad2p_m,reindex_m,0), self.remap(self.id2c_m,reindex_m,0), self.remap(self.iapd2s_m,reindex_m,0)
-                self.aed2aed_m, self.aed2m_m = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2m_m,reindex_m,1)
+                self.aed2aed_m, self.aed2m_m             = self.remap(self.aed2aed_m,reindex_m,1,both_side=True), self.remap(self.aed2m_m,reindex_m,1)
                 self.exec_specific['random_p_d'] = new_val
         print('Exiting LOAD_MAPS')
 
