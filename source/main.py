@@ -785,6 +785,9 @@ class ScaleVariablePlanBouquet:
                             else:
                                 # S = S(y−1)
                                 y -= 1
+                            # Contour Cost Deviation Code below (Contour wise, unlike Query wise which Sriram did)
+
+
                             next_plan_id = self.store_plan( plan_xml )
                             if next_plan_id in p2s_m:
                                 p2s_m[next_plan_id].add(next_sel)
