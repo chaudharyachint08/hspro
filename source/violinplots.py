@@ -3,8 +3,19 @@ import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+np.random.seed(42)
 
+data = []
+for IC_ix in range(np.random.randint(3,10)):
+	for point_ix in range(np.random.randint(25,100)):
+		data.append([IC_ix,np.random.random()])
 
-sns.violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None, bw='scott', cut=2, scale='area', scale_hue=True, gridsize=100, width=0.8, inner='quartile', split=False, dodge=True, orient=None, linewidth=None, color=None, palette=None, saturation=0.75, ax=None, **kwargs)
+# np.random.shuffle(data)
+data = np.array(data).T
 
-plt.plot
+df = pd.DataFrame({'Deviation':data[1],'Contour Index':data[0]})
+
+# sns.violinplot( x='Contour Index', y='Deviation', hue=None, data=df, gridsize=100, inner='quartile' )
+sns.violinplot( x='Contour Index', y='Deviation', hue=None, data=df, gridsize=100 )
+
+plt.show()

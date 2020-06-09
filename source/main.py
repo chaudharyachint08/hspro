@@ -119,7 +119,7 @@ parser = argparse.ArgumentParser()
 def set_cmd_arguments():
     "set command-line arguments"
     # Bool Type Arguments
-    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=True ) # Whether to include point of zero-selectivity, for mathematical convenience 
+    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
     parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True ) # To generate new information, like plans, contours, points
     parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
     parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
@@ -703,6 +703,7 @@ class ScaleVariablePlanBouquet:
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
         wasted_optimizer_calls = 0
         if IC_id != (self.random_p_IC_count-1): # Last contour is specially built during base_gen
+            self.obj_lock.acquire() ; self.deviation_dict[IC_id] = [] ; self.obj_lock.acquire() # Cost deviation list for each IC_id
             lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
             for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
                 s, t = self.Dim-(dim_count+1), dim_count
@@ -785,9 +786,8 @@ class ScaleVariablePlanBouquet:
                             else:
                                 # S = S(y−1)
                                 y -= 1
-                            # Contour Cost Deviation Code below (Contour wise, unlike Query wise which Sriram did)
-
-
+                            # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
+                            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.acquire()
                             next_plan_id = self.store_plan( plan_xml )
                             if next_plan_id in p2s_m:
                                 p2s_m[next_plan_id].add(next_sel)
@@ -876,6 +876,8 @@ class ScaleVariablePlanBouquet:
         print(IC_indices)
         # Executing NEXUS Algorithm for multi-dimensions
         nexus_thread_ls = [ threading.Thread(target=self.nexus,args=(IC_ix,scale,)) for IC_ix in IC_indices ]
+        # Cost deviation map, locked at object level
+        self.deviation_dict = {}
         # Boolean indecxing to check if previous contour is explored in any past invocation
         for IC_ix in IC_indices:
             if IC_ix not in self.exec_specific[scale]['nexus']:
@@ -1134,10 +1136,7 @@ class ScaleVariablePlanBouquet:
             self.simulation_result = self.simulate( act_sel=(sel_range_p[self.Dim][-1],)*self.Dim , scale=self.base_scale )
             self.save_maps()
             if do_plot:
-                if   self.Dim==1:
-                    self.plot_contours(do_posp=True,  scale=scale)
-                elif self.Dim==2:
-                    self.plot_contours(do_posp=False, scale=scale)
+                self.plot_contours(do_posp=True,  scale=scale)
             # self.evaluate(mode='p', scale=scale) # Function to compute all Performance metrics
 
     def product_cover(self, sel_1, sel_2, dual=False):
