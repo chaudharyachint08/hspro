@@ -126,6 +126,7 @@ def set_cmd_arguments():
     parser.add_argument("--do_plot"  , type=eval , dest='do_plot'  , default=False) # To perform basic plotting for 1D and 2D ESS and contours within them
     parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
+    parser.add_argument("--enexus"   , type=eval , dest='enexus'   , default=False) # To use New NEXUS algorithm or Not
     # Int Type Arguments
     parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=20) # Parallel processing via threads, in case of |CPU| logical processors
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
@@ -956,6 +957,17 @@ class ScaleVariablePlanBouquet:
         print('Entered PLOTTING')
         scale = scale if (scale is not None) else self.base_scale
         os.makedirs( self.plots_dir, exist_ok=True )
+        # Contour Cost devision plot, independent of dimensions of ESS
+        IC_ix_ls        = [ IC_ix      for IC_ix in deviation_dict for deviation in deviation_dict[IC_ix]]
+        deviation_ix_ls = [ deviation  for IC_ix in deviation_dict for deviation in deviation_dict[IC_ix]]
+        df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
+        # sns.violinplot( x='Contour Index', y='Deviation', hue=None, data=df, gridsize=100, inner='quartile' )
+        sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100 )
+        plt.grid(True, which='both')
+        plt.title( ' '.join((   r'$Cost Deviation of {}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+        plt.savefig( os.path.join( self.plots_dir, 'Cost Deviation of {} {} {}GB {}.PNG'.format(('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+        return # Return only by plotting deviation maps, for testing purpose
+
         if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
             random_p_val = self.exec_specific['random_p_d']-1
             IC_indices = sorted( set(range(random_p_val, self.random_p_IC_count, self.exec_specific['random_p_d'])).union({(self.random_p_IC_count-1)}) )
