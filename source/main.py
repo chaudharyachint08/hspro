@@ -298,7 +298,7 @@ class ScaleVariablePlanBouquet:
                 for line in f.readlines():
                     line = line.strip()
                     if line: # Using 1st part, second part imply nature of cost with (increasing/decreasing/none) selectivity
-                        if not (epp_line.startswith('--') or epp_line.startswith('#')): # '#' and '--' are two possible comments on EPP
+                        if not (line.startswith('--') or line.startswith('#')): # '#' and '--' are two possible comments on EPP
                             line = line.split('|') # Below picks EPP from file line, if not commented, also direction, either direction of cost monotonicity
                             epp_line, epp_dir  = line[0].strip(), (int(line[1].strip()) if len(line)>1 else 1)
                             self.epp.append( epp_line )
@@ -965,7 +965,9 @@ class ScaleVariablePlanBouquet:
         sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100 )
         plt.grid(True, which='both')
         plt.title( ' '.join((   r'$Cost Deviation of {}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+        os_lock.acquire()
         plt.savefig( os.path.join( self.plots_dir, 'Cost Deviation of {} {} {}GB {}.PNG'.format(('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+        os_lock.release()
         return # Return only by plotting deviation maps, for testing purpose
 
         if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
@@ -1017,7 +1019,9 @@ class ScaleVariablePlanBouquet:
                 plt.title( ' '.join((   r'$POSP$' , r'$Performance$' , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                 plt.grid(True, which='both')
                 # ax.set_xscale('log') ; # ax.set_yscale('log')
+                os_lock.acquire()
                 plt.savefig( os.path.join( self.plots_dir, '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                os_lock.release()
                 # plt.show()
             elif self.Dim == 2:
                 X_tck = self.sel_range_o_inc if self.epp_dir[0]>0 else self.sel_range_o_dec
@@ -1086,8 +1090,10 @@ class ScaleVariablePlanBouquet:
                     plt.ylabel( '\n'.join(('Selectivity',self.epp[1])) )
                     plt.title( ' '.join((   r'$Plan$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                     plt.grid(True, which='both')
+                    os_lock.acquire()
                     plt.savefig( os.path.join( self.plots_dir, '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
-                    plt.show()
+                    os_lock.release()
+                    # plt.show()
                 else:
                     plt.axvline( 1.0 ,color='k',linestyle='-') # Black vertical   line at 1.0 selectivity
                     plt.axhline( 1.0 ,color='k',linestyle='-') # Black horizontal line at 1.0 selectivity
@@ -1129,7 +1135,9 @@ class ScaleVariablePlanBouquet:
                     plt.ylabel( '\n'.join(('Selectivity',self.epp[1]))  )
                     plt.title( ' '.join((   r'$Contour$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                     plt.grid(True, which='both')
+                    os_lock.acquire()
                     plt.savefig( os.path.join( self.plots_dir, '2D-ESS Contours Diagram {}GB {} {}.PNG'.format(scale, self.anorexic_lambda,('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    os_lock.release()
                     # plt.show()
             elif self.Dim == 3:
                 pass # Some contour plotting can be done in future here
