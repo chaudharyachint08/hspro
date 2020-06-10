@@ -147,8 +147,8 @@ def set_cmd_arguments():
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
     # Tuple Type Arguments
     parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  50,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-    # parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(5000, 300,  70,  30, 15) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
-    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 100,  32,  16, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(5000, 300,  70,  30, 15) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    # parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 100,  32,  16, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
     parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
@@ -705,8 +705,7 @@ class ScaleVariablePlanBouquet:
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
         wasted_optimizer_calls = 0
         if IC_id != (self.random_p_IC_count-1): # Last contour is specially built during base_gen
-        	print('Begin to work')
-            self.obj_lock.acquire() ; self.deviation_dict[IC_id] = [] ; self.obj_lock.acquire() # Cost deviation list for each IC_id
+            self.obj_lock.acquire() ; self.deviation_dict[IC_id] = [] ; self.obj_lock.release() # Cost deviation list for each IC_id
             lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
             for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
                 s, t = self.Dim-(dim_count+1), dim_count
@@ -715,7 +714,6 @@ class ScaleVariablePlanBouquet:
                 if lower_cost is None:
                     lower_cost = self.cost(low_end_sel, scale=scale)
                 upper_cost = self.cost(upr_end_sel, scale=scale)
-                print(lower_cost, contour_cost, upper_cost)
                 if lower_cost<=contour_cost and contour_cost<upper_cost:
                     break
                 lower_cost = upper_cost
@@ -751,6 +749,7 @@ class ScaleVariablePlanBouquet:
                         break
                 if not continue_exp:
                     break
+            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(exp_cost/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
             print('Exponential Search for Seed complete')
             # Initial seed value, which will explore into D-dimensional surface
             initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
@@ -783,6 +782,8 @@ class ScaleVariablePlanBouquet:
                             if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
                                 # S = S(x+1)
                                 x += 1
+                                if (not (0<=x+1 and x+1<=self.resolution_p-1)):
+                                    break
                                 next_ix  = cur_ix[:]
                                 next_ix[dim_l] += 1
                                 next_sel = self.build_sel(next_ix)
@@ -793,8 +794,10 @@ class ScaleVariablePlanBouquet:
                             else:
                                 # S = S(y−1)
                                 y -= 1
+                                if (not (0<=y-1 and y-1<=self.resolution_p-1)) :
+                                    break
                             # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
-                            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.acquire()
+                            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
                             next_plan_id = self.store_plan( plan_xml )
                             if next_plan_id in p2s_m:
                                 p2s_m[next_plan_id].add(next_sel)
@@ -847,9 +850,9 @@ class ScaleVariablePlanBouquet:
         for plan_id in org_plans: # Identity mapping for cost-multiplicity without ANOREXIC reduction  & CSI
             self.aed2m_m[(0.0,IC_id,plan_id,scale)], self.aed2aed_m[(0.0,IC_id,plan_id,scale)] = 1.0, (0.0,IC_id,plan_id,scale)
         # Counting |Essential optimizer calls| and |FPC Calls|
-        simulation_result['Essential_Optimizer_calls'][IC_id] = sum( len(self.iapd2s_m[(IC_id,0.0,plan_id,scale)]) for plan_id in self.iad2p_m[(IC_id,0.0,scale)] )
-        simulation_result['FPC_calls']                [IC_id] = (len(self.iad2p_m[(IC_id,0.0,scale)])-1)*simulation_result['Essential_Optimizer_calls']
-        simulation_result['Wasted_Optimizer_calls']   [IC_id] = wasted_optimizer_calls
+        self.simulation_result['Essential_Optimizer_calls'][IC_id] = sum( len(self.iapd2s_m[(IC_id,0.0,plan_id,scale)]) for plan_id in self.iad2p_m[(IC_id,0.0,scale)] )
+        self.simulation_result['FPC_calls']                [IC_id] = (len(self.iad2p_m[(IC_id,0.0,scale)])-1)*self.simulation_result['Essential_Optimizer_calls'][IC_id]
+        self.simulation_result['Wasted_Optimizer_calls']   [IC_id] = wasted_optimizer_calls
         self.obj_lock.release()
         # Calling anorexic reduction, and associated map generation
         if not self.anorexic_lambda: # when self.anorexic_lambda==0.0
@@ -869,8 +872,8 @@ class ScaleVariablePlanBouquet:
         "Simulating Plan-Bouquet Execution under Ideal Cost model assumption"
         print('Entered SIMULATION')
         scale = scale if (scale is not None) else self.base_scale
-        simulation_result = {} # This will contain MSO, termination cost, |Optimizer calls| and |FPC calls| made
-        simulation_result['Essential_Optimizer_calls'], simulation_result['Wasted_Optimizer_calls'], simulation_result['FPC_calls'] = {}, {}, {}
+        self.simulation_result = {} # This will contain MSO, termination cost, |Optimizer calls| and |FPC calls| made
+        self.simulation_result['Essential_Optimizer_calls'], self.simulation_result['Wasted_Optimizer_calls'], self.simulation_result['FPC_calls'] = {}, {}, {}
         # Building main iso-cost contours. as they are needed for plotting, also will execute if random_p is False
         if 'nexus' not in self.exec_specific[scale]:
             self.exec_specific[scale]['nexus'] = {}
@@ -893,6 +896,8 @@ class ScaleVariablePlanBouquet:
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
                 nexus_thread.start()
+                nexus_thread.join()
+                self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
         # Waiting for construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
@@ -909,7 +914,7 @@ class ScaleVariablePlanBouquet:
                 zagged_bool[IC_ix][plan_id] = False
         # Simulating Execution using Plan_bouquet
         total_cost  = 0
-        simulation_result['termination-cost'], simulation_result['done'], simulation_result['MSO_k'] = 0, False, {}
+        self.simulation_result['termination-cost'], self.simulation_result['done'], self.simulation_result['MSO_k'] = 0, False, {}
         for IC_ix in IC_indices:
             curr_IC_cost_ls, curr_IC_total_cost_ls = [], []
             plan_ls = list(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)])
@@ -917,31 +922,31 @@ class ScaleVariablePlanBouquet:
                 np.random.shuffle(plan_ls)
             for plan_id in plan_ls:
                 _, cover_IC_ix, cover_plan_id, _ = self.aed2aed_m[(self.anorexic_lambda,IC_ix,plan_id,scale)]
-                if (simulation_result['done'] is False) and (zagged_bool[cover_IC_ix][cover_plan_id] is False):
+                if (self.simulation_result['done'] is False) and (zagged_bool[cover_IC_ix][cover_plan_id] is False):
                     cost_val, cost_threshold = self.cost(act_sel, plan_id=cover_plan_id, scale=scale), self.id2c_m[(cover_IC_ix,scale)]*self.aed2m_m[(self.anorexic_lambda, cover_IC_ix, cover_plan_id, scale)]
                     # print('IC_ix = {} , plan_id = {}'.format(cover_IC_ix,cover_plan_id))
                     # print(cost_val, cost_threshold)
                     if cost_val <= cost_threshold: # If plan execution reaches completition within assigned cost budget
-                        if simulation_result['done'] is False:
-                            simulation_result['done'] = True
-                            simulation_result['termination-cost'] += cost_val
+                        if self.simulation_result['done'] is False:
+                            self.simulation_result['done'] = True
+                            self.simulation_result['termination-cost'] += cost_val
                     else:
-                        if simulation_result['done'] is False:
-                            simulation_result['termination-cost'] += cost_threshold
+                        if self.simulation_result['done'] is False:
+                            self.simulation_result['termination-cost'] += cost_threshold
                     zagged_bool[cover_IC_ix][cover_plan_id] = True
                     total_cost += cost_threshold
                     curr_IC_cost_ls.append(cost_threshold)
                     curr_IC_total_cost_ls.append(total_cost)
             if (IC_ix==IC_indices[0]):
-                simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / (min(curr_IC_cost_ls)/r_ratio)
+                self.simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / (min(curr_IC_cost_ls)/r_ratio)
             else:
-                simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / min(prev_IC_cost_ls)
+                self.simulation_result['MSO_k'][IC_ix] = max(curr_IC_total_cost_ls) / min(prev_IC_cost_ls)
             prev_IC_cost_ls, prev_IC_total_cost_ls = curr_IC_cost_ls, curr_IC_total_cost_ls
 
-        simulation_result['MSO_e'] = max( simulation_result['MSO_k'].values() )
-        simulation_result['MSO_g'] = ((r_ratio**2)/(r_ratio-1)) * max( len(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]) for IC_ix in IC_indices  )
+        self.simulation_result['MSO_e'] = max( self.simulation_result['MSO_k'].values() )
+        self.simulation_result['MSO_g'] = ((r_ratio**2)/(r_ratio-1)) * max( len(self.iad2p_m[(IC_ix,self.anorexic_lambda,scale)]) for IC_ix in IC_indices  )
         print('Exiting SIMULATION')
-        return simulation_result
+        return self.simulation_result
 
     def evaluate(self, mode='p', scale=None):
         "Evaluates various metrics of Native optimizer & Plan Bouquet"
@@ -964,16 +969,20 @@ class ScaleVariablePlanBouquet:
         scale = scale if (scale is not None) else self.base_scale
         os.makedirs( self.plots_dir, exist_ok=True )
         # Contour Cost devision plot, independent of dimensions of ESS
-        IC_ix_ls        = [ IC_ix      for IC_ix in deviation_dict for deviation in deviation_dict[IC_ix]]
-        deviation_ix_ls = [ deviation  for IC_ix in deviation_dict for deviation in deviation_dict[IC_ix]]
+        for IC_ix in self.deviation_dict:
+            self.deviation_dict[IC_ix] = np.array(self.deviation_dict[IC_ix])
+            self.deviation_dict[IC_ix] = self.deviation_dict[IC_ix] - self.deviation_dict[IC_ix].min()
+        IC_ix_ls        = [ IC_ix      for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
+        deviation_ix_ls = [ deviation  for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
         # sns.violinplot( x='Contour Index', y='Deviation', hue=None, data=df, gridsize=100, inner='quartile' )
-        sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100 )
+        sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100, inner='box' )
         plt.grid(True, which='both')
-        plt.title( ' '.join((   r'$Cost Deviation of {}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+        plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
         os_lock.acquire()
-        plt.savefig( os.path.join( self.plots_dir, 'Cost Deviation of {} {} {}GB {}.PNG'.format(('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+        plt.savefig( os.path.join( self.plots_dir, 'Cost Deviation of {} {} {}GB.PNG'.format(('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
         os_lock.release()
+        plt.clf() ; plt.close()
         return # Return only by plotting deviation maps, for testing purpose
 
         if self.Dim <=3: # More than 3 dimensional contours cannot be visualized
@@ -1159,7 +1168,7 @@ class ScaleVariablePlanBouquet:
             if ('base_gen' not in self.exec_specific[scale]) or (not self.exec_specific[scale]['base_gen']):
                 self.exec_specific[scale]['base_gen'] = False
                 self.base_gen( scale=self.base_scale )
-            self.simulation_result = self.simulate( act_sel=(sel_range_p[self.Dim][-1],)*self.Dim , scale=self.base_scale )
+            self.simulate( act_sel=(sel_range_p[self.Dim][-1],)*self.Dim , scale=self.base_scale )
             self.save_maps()
             if do_plot:
                 self.plot_contours(do_posp=True,  scale=scale)
@@ -1251,8 +1260,8 @@ if __name__=='__main__':
     obj_ls, stderr = [], my_open(os.path.join(master_dir,'stderr.txt'),'w')
     for query_name in my_listdir( os.path.join(master_dir,benchmark,'sql') ):
         query_id = query_name.split('.')[0].strip()
-        if query_id == 'temp':
-            for base_scale in db_scales:
+        if query_id == '4D_DS_Q22':
+            for base_scale in db_scales[-3:]:
                 obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,base_scale,db_scales,stderr) )
         # obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
         
@@ -1266,8 +1275,8 @@ if __name__=='__main__':
     #     with multiprocessing.Pool(processes=CPU) as pool:
     #         for i in pool.imap_unordered(run,obj_ls):
     #             continue
-    # except:
-    #     pass
+    # except Exception as err:
+    #     print(err, str(err))
     # finally:
     #     stderr.close()
 
