@@ -132,7 +132,7 @@ def set_cmd_arguments():
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
     parser.add_argument("--random_p_d" , type=eval , dest='random_p_d' , default=2) # Discretization parameter for shifting of Iso-cost contours, (always power of 2)
-    parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=6) # If have to round of selectivity values during computation
+    parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=9) # If have to round of selectivity values during computation
     parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # Default font-size for Matplotlib plotting
     # Float Type Arguments
     parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
@@ -147,7 +147,8 @@ def set_cmd_arguments():
     parser.add_argument("--master_dir"  , type=str  , dest='master_dir'  , default=os.path.join('.','..','bouquet_master' ))
     # Tuple Type Arguments
     parser.add_argument("--resolution_o" , type=eval , dest='resolution_o' , default=(100,  50,  50,  20, 10) ) # Used for MSO evaluation, exponential in EPPs always, hence kept low Dimension-wise
-    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(5000, 300,  70,  30, 15) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    # parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(5000, 300,  70,  30, 15) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
+    parser.add_argument("--resolution_p" , type=eval , dest='resolution_p' , default=(1000, 100,  32,  16, 10) ) # Used for Plan Bouquet, should be sufficient for smoothness, worst case exponential
     parser.add_argument("--db_scales"    , type=eval , dest='db_scales'    , default=(1,2,5,10,12,14,16,18,20,30,40,50,75,100,102,105,109,114,119,125,150,200,250))
     # Adding global vairables from received or default value
     args, unknown = parser.parse_known_args()
@@ -729,6 +730,7 @@ class ScaleVariablePlanBouquet:
                     l_ix = m_ix+1
                 else:
                     u_ix = m_ix-1
+            print('Binary Search for Seed complete')
             # Repeated Exponential search to find leftmost point inside [C,(1+α)C]
             v_ix = m_ix
             while True:
@@ -746,6 +748,7 @@ class ScaleVariablePlanBouquet:
                         break
                 if not continue_exp:
                     break
+            print('Exponential Search for Seed complete')
             # Initial seed value, which will explore into D-dimensional surface
             initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
             initial_seed_sel = self.build_sel(initial_seed_ix)
