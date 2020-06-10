@@ -705,6 +705,7 @@ class ScaleVariablePlanBouquet:
         # Locating initial seed boundary (0^s, v, (RES-1)^t) such that 0<=v<(RES-1), limit of index is [0,RES-1]
         wasted_optimizer_calls = 0
         if IC_id != (self.random_p_IC_count-1): # Last contour is specially built during base_gen
+        	print('Begin to work')
             self.obj_lock.acquire() ; self.deviation_dict[IC_id] = [] ; self.obj_lock.acquire() # Cost deviation list for each IC_id
             lower_cost, upper_cost, contour_cost = None, None, self.id2c_m[(IC_id,scale)]
             for dim_count in range(self.Dim): # line of initial seed (dim_count, dim_count+1)
@@ -714,6 +715,7 @@ class ScaleVariablePlanBouquet:
                 if lower_cost is None:
                     lower_cost = self.cost(low_end_sel, scale=scale)
                 upper_cost = self.cost(upr_end_sel, scale=scale)
+                print(lower_cost, contour_cost, upper_cost)
                 if lower_cost<=contour_cost and contour_cost<upper_cost:
                     break
                 lower_cost = upper_cost
