@@ -719,6 +719,7 @@ class ScaleVariablePlanBouquet:
                 lower_cost = upper_cost
             # Binary search for finding value within interval [C,(1+α)C]
             l_ix, u_ix = 0, (self.resolution_p - 1)-1 # -1 is done twice, as limit are from 0<=v<(RES-1)
+            print('To begin Binary Search for Seed')
             while True:
                 m_ix = (l_ix+u_ix)//2
                 mid_sel_ix = ( (0,)*s + (m_ix,) + (self.resolution_p-1,)*t )
