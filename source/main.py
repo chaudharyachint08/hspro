@@ -128,6 +128,7 @@ def set_cmd_arguments():
     parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
     parser.add_argument("--enexus"   , type=eval , dest='enexus'   , default=False) # To use New NEXUS algorithm or Not
     # Int Type Arguments
+    parser.add_argument("--qi"         , type=eval , dest='qi'         , default=0) # Default font-size for Matplotlib plotting
     parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=20) # Parallel processing via threads, in case of |CPU| logical processors
     parser.add_argument("--base_scale" , type=eval , dest='base_scale' , default=1)
     parser.add_argument("--exec_scale" , type=eval , dest='exec_scale' , default=1)
@@ -342,6 +343,7 @@ class ScaleVariablePlanBouquet:
     def get_cost_and_plan(self, sel, plan_id=None, scale=None): # return (result_cost, result_plan)
         "FPC of plan at some other selectivity value if plan is suplied, else optimal plan and its cost at supplied selectivity"
         scale = scale if (scale is not None) else self.base_scale
+        break_flag = False
         while True:
             try:
                 connection = psycopg2.connect(user = "sa",
@@ -366,9 +368,12 @@ class ScaleVariablePlanBouquet:
                 result_cost = float( json_obj["QUERY PLAN"][0]["Plan"]["Total-Cost"] )
                 break_flag = True
             finally:
-                if connection:
-                    cursor.close()
-                    connection.close()
+                try:
+                    if connection:
+                        cursor.close()
+                        connection.close()
+                except:
+                    pass
                 if break_flag:
                     break
         return (result_cost, result_plan)
@@ -719,9 +724,14 @@ class ScaleVariablePlanBouquet:
                 lower_cost = upper_cost
             # Binary search for finding value within interval [C,(1+α)C]
             l_ix, u_ix = 0, (self.resolution_p - 1)-1 # -1 is done twice, as limit are from 0<=v<(RES-1)
-            print('To begin Binary Search for Seed')
+            print('Binary Search for Seed <Begin, ', end='')
+            bool_val = np.zeros(self.resolution_p,dtype='bool')
             while True:
                 m_ix = (l_ix+u_ix)//2
+                if bool_val[m_ix]: # Second Chance algorithms for Binary Search
+                    break
+                else:
+                    bool_val[m_ix] = True
                 mid_sel_ix = ( (0,)*s + (m_ix,) + (self.resolution_p-1,)*t )
                 mid_sel    = self.build_sel(mid_sel_ix)
                 mid_cost   = self.cost(mid_sel, scale=scale)
@@ -731,7 +741,7 @@ class ScaleVariablePlanBouquet:
                     l_ix = m_ix+1
                 else:
                     u_ix = m_ix-1
-            print('Binary Search for Seed complete')
+            print('END>')
             # Repeated Exponential search to find leftmost point inside [C,(1+α)C]
             v_ix = m_ix
             while True:
@@ -749,8 +759,13 @@ class ScaleVariablePlanBouquet:
                         break
                 if not continue_exp:
                     break
-            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(exp_cost/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
-            print('Exponential Search for Seed complete')
+            self.obj_lock.acquire()
+            try:
+                self.deviation_dict[IC_id].append(exp_cost/self.id2c_m[(IC_id,scale)])
+            except:
+                self.deviation_dict[IC_id].append(mid_cost/self.id2c_m[(IC_id,scale)])
+            self.obj_lock.release()
+            print('Exponential Search for Better Seed complete')
             # Initial seed value, which will explore into D-dimensional surface
             initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
             initial_seed_sel = self.build_sel(initial_seed_ix)
@@ -764,7 +779,7 @@ class ScaleVariablePlanBouquet:
             def exploration(org_seed_ix, total_dim):
                 "Nested function for exploration using seed and contour generation"
                 nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
-                print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+                # print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
                 if total_dim >= 1 :
                     dim_h = total_dim-1
                     cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
@@ -829,7 +844,7 @@ class ScaleVariablePlanBouquet:
                     # Waiting for construction of all Ico-cost contours
                     for explore_thread in exploration_thread_ls:
                         explore_thread.join()
-                print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+                # print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
             exploration(initial_seed_ix, self.Dim)
@@ -896,8 +911,8 @@ class ScaleVariablePlanBouquet:
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
                 nexus_thread.start()
-                nexus_thread.join()
-                self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
+                # nexus_thread.join()
+                # self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
         # Waiting for construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
@@ -922,7 +937,8 @@ class ScaleVariablePlanBouquet:
                 np.random.shuffle(plan_ls)
             for plan_id in plan_ls:
                 _, cover_IC_ix, cover_plan_id, _ = self.aed2aed_m[(self.anorexic_lambda,IC_ix,plan_id,scale)]
-                if (self.simulation_result['done'] is False) and (zagged_bool[cover_IC_ix][cover_plan_id] is False):
+                # if (self.simulation_result['done'] is False) and (zagged_bool[cover_IC_ix][cover_plan_id] is False):
+                if True: # To prevent errors incurred maybe due to simulation stopping criterion
                     cost_val, cost_threshold = self.cost(act_sel, plan_id=cover_plan_id, scale=scale), self.id2c_m[(cover_IC_ix,scale)]*self.aed2m_m[(self.anorexic_lambda, cover_IC_ix, cover_plan_id, scale)]
                     # print('IC_ix = {} , plan_id = {}'.format(cover_IC_ix,cover_plan_id))
                     # print(cost_val, cost_threshold)
@@ -976,11 +992,18 @@ class ScaleVariablePlanBouquet:
         deviation_ix_ls = [ deviation  for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
         # sns.violinplot( x='Contour Index', y='Deviation', hue=None, data=df, gridsize=100, inner='quartile' )
-        sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100, inner='box' )
+        # sns.violinplot( x='Contour Index', y='Cost Deviation', hue=None, data=df, gridsize=100 )
+        sns.boxplot(    x='Contour Index', y='Cost Deviation', hue=None, data=df )
+        # sns.swarmplot(  x='Contour Index', y='Cost Deviation', data=df, color='.25' )
         plt.grid(True, which='both')
+        plt.ylim(0.0,None)
         plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
         os_lock.acquire()
-        plt.savefig( os.path.join( self.plots_dir, 'Cost Deviation of {} {} {}GB.PNG'.format(('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+        plt.savefig( os.path.join( self.plots_dir, '{} Cost Deviation of {} {} {}GB.PNG'.format(progression,('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+
+        with open( os.path.join( self.plots_dir, '{} Simulation Results of {} {} {}GB.TXT'.format(progression,('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) ,'w') as f:
+            f.write( str(self.simulation_result) )
+
         os_lock.release()
         plt.clf() ; plt.close()
         return # Return only by plotting deviation maps, for testing purpose
@@ -1260,24 +1283,53 @@ if __name__=='__main__':
     obj_ls, stderr = [], my_open(os.path.join(master_dir,'stderr.txt'),'w')
     for query_name in my_listdir( os.path.join(master_dir,benchmark,'sql') ):
         query_id = query_name.split('.')[0].strip()
-        if query_id == '4D_DS_Q22':
-            for base_scale in db_scales[-3:]:
-                obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,base_scale,db_scales,stderr) )
-        # obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
-        
+        # Maximum of 6D (6-dimensional) query execution
 
+        if query_id in ('4D_DS_Q22',
+            '4D_DS_Q67',
+            '5D_DS_Q21',
+            '5D_DS_Q37',
+            '5D_DS_Q40',
+            '5D_DS_Q62',
+            '5D_DS_Q99',
+            '6D_DS_Q15',
+            '6D_DS_Q89',
+            '7D_DS_Q53',
+            '8D_DS_Q73',
+            '8D_DS_Q84',
+            '8D_DS_Q96',
+            '9D_DS_Q19',
+            '9D_DS_Q7',
+            '10D_DS_Q26,'
+            '10D_DS_Q27')[qi:qi+1]:
+            for scale in (1,5,10,20,50,100,125,150,200,250):
+            # for scale in (1,5,10,20,50,100,125,150,200,250):
+            # for scale in db_scales:
+                obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,scale,scale,db_scales,stderr) )
+        # obj_ls.append( ScaleVariablePlanBouquet(benchmark,query_id,base_scale,exec_scale,db_scales,stderr) )
 
     # Serial Execution, each query at a time, no multi-process for different queries, while multi-threading still there
     for obj in obj_ls:
         run(obj)
 
+
+    # from joblib import Parallel, delayed
+    # Parallel(n_jobs=-1, require='sharedmem')(delayed(run)(obj) for obj in obj_ls)
+
+    # with multiprocessing.Pool(processes=CPU) as pool:
+    #     pool.imap_unordered(run, obj_ls)
+    #     pool.join()
+
+
+
     # try:
     #     with multiprocessing.Pool(processes=CPU) as pool:
     #         for i in pool.imap_unordered(run,obj_ls):
-    #             continue
+    #             pass
     # except Exception as err:
     #     print(err, str(err))
     # finally:
+
     #     stderr.close()
 
     # Awadesh Acc 04
