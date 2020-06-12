@@ -1,4 +1,4 @@
-def exploration(org_seed_ix, total_dim):
+def ada_exploration(org_seed_ix, total_dim):
     "Nested function for exploration using seed and contour generation"
     nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
     print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
