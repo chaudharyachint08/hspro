@@ -119,14 +119,14 @@ parser = argparse.ArgumentParser()
 def set_cmd_arguments():
     "set command-line arguments"
     # Bool Type Arguments
-    parser.add_argument("--zero_sel" , type=eval , dest='zero_sel' , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
-    parser.add_argument("--new_info" , type=eval , dest='new_info' , default=True ) # To generate new information, like plans, contours, points
-    parser.add_argument("--anorexic" , type=eval , dest='anorexic' , default=False) # If to use Anorexic Reduction Heuristic
-    parser.add_argument("--covering" , type=eval , dest='covering' , default=False) # If to use Covering Sequence Identificationb
-    parser.add_argument("--do_plot"  , type=eval , dest='do_plot'  , default=False) # To perform basic plotting for 1D and 2D ESS and contours within them
-    parser.add_argument("--random_s" , type=eval , dest='random_s' , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
-    parser.add_argument("--random_p" , type=eval , dest='random_p' , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
-    parser.add_argument("--enexus"   , type=eval , dest='enexus'   , default=False) # To use New NEXUS algorithm or Not
+    parser.add_argument("--zero_sel"     , type=eval , dest='zero_sel'     , default=False) # Whether to include point of zero-selectivity, for mathematical convenience 
+    parser.add_argument("--new_info"     , type=eval , dest='new_info'     , default=True ) # To generate new information, like plans, contours, points
+    parser.add_argument("--anorexic"     , type=eval , dest='anorexic'     , default=False) # If to use Anorexic Reduction Heuristic
+    parser.add_argument("--covering"     , type=eval , dest='covering'     , default=False) # If to use Covering Sequence Identificationb
+    parser.add_argument("--do_plot"      , type=eval , dest='do_plot'      , default=False) # To perform basic plotting for 1D and 2D ESS and contours within them
+    parser.add_argument("--random_s"     , type=eval , dest='random_s'     , default=False) # Flag for Sec 4.1 Randomized Sequence of Iso-Contour Plans
+    parser.add_argument("--random_p"     , type=eval , dest='random_p'     , default=False) # Flag for Sec 4.2 Randomized Placement of Iso-Contours (with discretization)
+    parser.add_argument("--adaexplore"   , type=eval , dest='adaexplore'   , default=False) # To use New NEXUS algorithm or Not
     # Int Type Arguments
     parser.add_argument("--qi"         , type=eval , dest='qi'         , default=0) # Default font-size for Matplotlib plotting
     parser.add_argument("--CPU"        , type=eval , dest='CPU'        , default=20) # Parallel processing via threads, in case of |CPU| logical processors
@@ -847,7 +847,10 @@ class ScaleVariablePlanBouquet:
                 # print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
-            exploration(initial_seed_ix, self.Dim)
+            if not adaexplore:
+                exploration(initial_seed_ix, self.Dim)
+            else:
+                ada_exploration(build_sel(initial_seed_ix), self.Dim, progression=progression)
             # Merging to Object Data-structures after exploration is complete
             self.obj_lock.acquire()
             self.iad2p_m .update(iad2p_m )
