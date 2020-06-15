@@ -1,7 +1,7 @@
-def ada_exploration(org_seed_ix, total_dim):
+def ada_exploration(org_seed_ix, total_dim, progression=progression):
     "Nested function for exploration using seed and contour generation"
     nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
-    print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+    # print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
     if total_dim >= 1 :
         dim_h = total_dim-1
         cur_ix, exploration_thread_ls = list(org_seed_ix[:]), []
@@ -19,6 +19,8 @@ def ada_exploration(org_seed_ix, total_dim):
                 if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
                     # S = S(x+1)
                     x += 1
+                    if (not (0<=x+1 and x+1<=self.resolution_p-1)):
+                        break
                     next_ix  = cur_ix[:]
                     next_ix[dim_l] += 1
                     next_sel = self.build_sel(next_ix)
@@ -29,6 +31,10 @@ def ada_exploration(org_seed_ix, total_dim):
                 else:
                     # S = S(y−1)
                     y -= 1
+                    if (not (0<=y-1 and y-1<=self.resolution_p-1)) :
+                        break
+                # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
+                self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
                 next_plan_id = self.store_plan( plan_xml )
                 if next_plan_id in p2s_m:
                     p2s_m[next_plan_id].add(next_sel)
@@ -60,4 +66,4 @@ def ada_exploration(org_seed_ix, total_dim):
         # Waiting for construction of all Ico-cost contours
         for explore_thread in exploration_thread_ls:
             explore_thread.join()
-    print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+    # print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
