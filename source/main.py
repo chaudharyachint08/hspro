@@ -136,12 +136,13 @@ def set_cmd_arguments():
     parser.add_argument("--sel_round"  , type=eval , dest='sel_round'  , default=9) # If have to round of selectivity values during computation
     parser.add_argument("--font_size"  , type=eval , dest='font_size'  , default=None) # Default font-size for Matplotlib plotting
     # Float Type Arguments
-    parser.add_argument("--r_ratio"         , type=eval , dest='r_ratio'         , default=2.0)    # IC cost ratio for bouquet
-    parser.add_argument("--epsilon"         , type=eval , dest='epsilon'         , default=1e-9)    # minimal change value in floating calculation
-    parser.add_argument("--min_sel"         , type=eval , dest='min_sel'         , default=0.0001) # Least sel out of 1.0, treated as epsilon in theory
-    parser.add_argument("--max_sel"         , type=eval , dest='max_sel'         , default=1.0)    # Maximum sel of 1.0
-    parser.add_argument("--anorexic_lambda" , type=eval , dest='anorexic_lambda' , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
-    parser.add_argument("--nexus_tolerance" , type=eval , dest='nexus_tolerance' , default=0.05) # for q-points in discretized planes, results in surface thickening
+    parser.add_argument("--r_ratio"          , type=eval , dest='r_ratio'          , default=2.0)    # IC cost ratio for bouquet
+    parser.add_argument("--epsilon"          , type=eval , dest='epsilon'          , default=1e-9)    # minimal change value in floating calculation
+    parser.add_argument("--min_sel"          , type=eval , dest='min_sel'          , default=0.0001) # Least sel out of 1.0, treated as epsilon in theory
+    parser.add_argument("--max_sel"          , type=eval , dest='max_sel'          , default=1.0)    # Maximum sel of 1.0
+    parser.add_argument("--anorexic_lambda"  , type=eval , dest='anorexic_lambda'  , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
+    parser.add_argument("--bisection_lambda" , type=eval , dest='bisection_lambda' , default=0.2) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
+    parser.add_argument("--nexus_tolerance"  , type=eval , dest='nexus_tolerance'  , default=0.05) # for q-points in discretized planes, results in surface thickening
     # String Type Arguments
     parser.add_argument("--progression" , type=str  , dest='progression' , default='GP')
     parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
@@ -848,9 +849,9 @@ class ScaleVariablePlanBouquet:
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
             if not adaexplore:
-                exploration(initial_seed_ix, self.Dim)
+                exploration( initial_seed_ix, self.Dim )
             else:
-                ada_exploration(build_sel(initial_seed_ix), self.Dim, progression=progression)
+                ada_exploration( build_sel(initial_seed_ix), self.Dim, progression=progression )
             # Merging to Object Data-structures after exploration is complete
             self.obj_lock.acquire()
             self.iad2p_m .update(iad2p_m )
