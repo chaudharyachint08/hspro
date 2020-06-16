@@ -141,8 +141,10 @@ def set_cmd_arguments():
     parser.add_argument("--min_sel"          , type=eval , dest='min_sel'          , default=0.0001) # Least sel out of 1.0, treated as epsilon in theory
     parser.add_argument("--max_sel"          , type=eval , dest='max_sel'          , default=1.0)    # Maximum sel of 1.0
     parser.add_argument("--anorexic_lambda"  , type=eval , dest='anorexic_lambda'  , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
-    parser.add_argument("--bisection_lambda" , type=eval , dest='bisection_lambda' , default=0.2) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
     parser.add_argument("--nexus_tolerance"  , type=eval , dest='nexus_tolerance'  , default=0.05) # for q-points in discretized planes, results in surface thickening
+    parser.add_argument("--bisection_lambda" , type=eval , dest='bisection_lambda' , default=0.2) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
+    parser.add_argument("--ada_momentum"     , type=eval , dest='ada_momentum'     , default=0.5) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
+
     # String Type Arguments
     parser.add_argument("--progression" , type=str  , dest='progression' , default='GP')
     parser.add_argument("--benchmark"   , type=str  , dest='benchmark'   , default='tpcds')
@@ -410,11 +412,13 @@ class ScaleVariablePlanBouquet:
                 os.makedirs( xml_plan_path , exist_ok=True )
             if not os.path.isdir(json_plan_path):
                 os.makedirs( json_plan_path, exist_ok=True )
+            os_lock.acquire()
             plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
             with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
                 f.write( xml_string )
             self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
             self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
+            os_lock.release()
         return self.r2p_m[plan_serial]
 
     ######## PERFORMANCE METRICS METHODS ########

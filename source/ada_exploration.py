@@ -17,6 +17,59 @@ def ada_exploration(org_seed, total_dim, progression=progression):
             # 2D exploration using initial seed
             seed_sel_ls.append( tuple(cur_sel) ) # Checkpoint, index to selectivity, as build_sel is not needed
 
+            step_size, dir_vec = 1, np.array([0.0, -1.0]) # [X, Y] is used for direction vector
+
+            while True:
+                next_sel = np.array(cur_sel[:])
+                norm_dir_vec = dir_vec/np.linalg.norm(dir_vec,1)
+
+                # Ahead movement based on d (direction vector)
+                if progression=='AP':
+                    diff_sel = d_sel *  (step_size*norm_dir_vec)
+                elif progression=='GP':
+                    diff_sel = r_sel ** (step_size*norm_dir_vec)
+                # Checkhere  if next_sel is not getting out of the grid
+                next_sel[[dim_l, dim_h]] += diff_sel
+                cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                next_plan_id = self.store_plan( plan_xml )
+
+                # Correction Vector (CHECKPOINT)
+                # Check here  if corr_vec is not getting out of the grid
+                pass
+
+
+                grad_vec = step_size*norm_dir_vec + corr_vec
+                norm_grad_vec = grad_vec/np.linalg.norm(grad_vec,1)
+
+                # Code for better location finding
+                pass
+
+                if (cost_val <= contour_cost*(1+nexus_tolerance)) and (cost_val <= contour_cost*(1+nexus_tolerance)):
+                    grad_impact = (1-ada_momentum**step_size)
+                    dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
+
+                    # BisectionAPD code here with Simulating Recursion
+                    pass
+
+                    step_size *= 2 # Increasing Step size by 2
+                else:
+                    nexus_lock.acquire()
+                    wasted_optimizer_calls += 2 # dir_vec and grad_vec lead to two wasted optimizer callss
+                    nexus_lock.release()
+
+                    if step_size>1:
+                        step_size /= 2 # Decreasing Step size by 2
+                    else:
+                        # Exponential rotation algorithm
+                        pass
+                # Specify break condition in loop
+
+
+
+    
+
+
+
 
             while True:
                 x, y = cur_ix[dim_l], cur_ix[dim_h] # Checkpoint, index to selectivity, as build_sel is not needed
@@ -41,6 +94,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     y -= 1
                     if (not (0<=y-1 and y-1<=self.resolution_p-1)) :
                         break
+
                 # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
                 self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
                 next_plan_id = self.store_plan( plan_xml )
