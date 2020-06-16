@@ -31,7 +31,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     diff_sel = d_sel *  (step_size*norm_dir_vec)
                 elif progression=='GP':
                     diff_sel = r_sel ** (step_size*norm_dir_vec)
-                # Checkh ere  if next_sel is not getting out of the grid
+                # Check here  if next_sel is not getting out of the grid
                 if True:
                     next_sel[[dim_l, dim_h]] += diff_sel
                 else:
@@ -53,9 +53,9 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     diff_sel = d_sel *  (step_size*norm_grad_vec)
                 elif progression=='GP':
                     diff_sel = r_sel ** (step_size*norm_grad_vec)
-                # Checkh ere  if next_sel is not getting out of the grid
+                # Check here  if next_sel is not getting out of the grid
                 if True:
-                    next_sel[[dim_l, dim_h]] += diff_sel
+                    next_sel[[dim_l, dim_h]] += diff_sel # CHECKPOINT, not an additive change for GP
                 else:
                     pass
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -66,15 +66,20 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
 
                     # BisectionAPD code here with Simulating Recursion
-                    if bisection_lambda:
-                        sim_stck = [ ((cur_sel, prev_plan_id),(next_sel, next_plan_id)), ]
-                        while sim_stck:
-                            (sel_l, plan_id_l), (sel_r, plan_id_r) = sim_stck.pop()
-                            if progression=='AP':
-                                diff_sel = d_sel *  (step_size*norm_dir_vec)
-                                pass
-                            elif progression=='GP':
-                                diff_sel = r_sel ** (step_size*norm_dir_vec)
+                    sim_stck = [ ((cur_sel, prev_plan_id),(next_sel, next_plan_id)), ]
+                    while sim_stck:
+                        (sel_l, plan_id_l), (sel_r, plan_id_r) = sim_stck.pop()
+                        if progression=='AP':
+                            srch_flg = True if ( np.linalg.norm(      (sel_l-sel_r),1) > d_sel         ) else False
+                            sel_m = (sel_l+sel_r)/2
+                        elif progression=='GP':
+                            srch_flg = True if ( np.linalg.norm(np.log(sel_l/sel_r),1) > np.log(r_sel) ) else False
+                            pass
+                        if srch_flg:
+                    
+                            mid_cost_val, plan_xml = self.get_cost_and_plan(sel_m, plan_id=None, scale=scale)
+
+                            if bisection_lambda: # FPC Check can be done
                                 pass
 
                     step_size *= 2 # Increasing Step size by 2
