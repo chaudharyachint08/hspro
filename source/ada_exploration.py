@@ -8,50 +8,77 @@ def ada_exploration(org_seed, total_dim, progression=progression):
     elif progression=='GP':
         r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_p_inc)-1) )
 
+    org_seed = np.array(org_seed)
+    prev_cost_val, plan_xml = self.get_cost_and_plan(org_seed, plan_id=None, scale=scale)
+    prev_plan_id = self.store_plan( plan_xml )
+
     if total_dim >= 1 :
         dim_h = total_dim-1
-        cur_sel, exploration_thread_ls = list(org_seed_[:]), [] # Checkpoint, index to selectivity, as build_sel is not needed
+        cur_sel, exploration_thread_ls = np.copy(org_seed), [] # Checkpoint, index to selectivity, as build_sel is not needed
         for dim_l in range(total_dim-1):
             # (dim_l, dim_h) is dimension pair to be explored
             p2s_m, seed_sel_ls= {}, [] # plan_index to selectivity, as build_sel is not needed
             # 2D exploration using initial seed
             seed_sel_ls.append( tuple(cur_sel) ) # Checkpoint, index to selectivity, as build_sel is not needed
-
             step_size, dir_vec = 1, np.array([0.0, -1.0]) # [X, Y] is used for direction vector
 
             while True:
-                next_sel = np.array(cur_sel[:])
+                # Finding point with 'd' vector
+                next_sel = np.copy(cur_sel)
                 norm_dir_vec = dir_vec/np.linalg.norm(dir_vec,1)
-
                 # Ahead movement based on d (direction vector)
                 if progression=='AP':
                     diff_sel = d_sel *  (step_size*norm_dir_vec)
                 elif progression=='GP':
                     diff_sel = r_sel ** (step_size*norm_dir_vec)
-                # Checkhere  if next_sel is not getting out of the grid
-                next_sel[[dim_l, dim_h]] += diff_sel
-                cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                # Checkh ere  if next_sel is not getting out of the grid
+                if True:
+                    next_sel[[dim_l, dim_h]] += diff_sel
+                else:
+                    pass
+                next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
 
-                # Correction Vector (CHECKPOINT)
-                # Check here  if corr_vec is not getting out of the grid
+                # Correction Vector, Check here  if corr_vec is not getting out of the grid
                 pass
 
-
+                # Finding 'g' vector, better direction finding
                 grad_vec = step_size*norm_dir_vec + corr_vec
+
+                # Finding point with 'g' vector
+                next_sel = np.copy(cur_sel)
                 norm_grad_vec = grad_vec/np.linalg.norm(grad_vec,1)
+                # Ahead movement based on g (gradient vector)
+                if progression=='AP':
+                    diff_sel = d_sel *  (step_size*norm_grad_vec)
+                elif progression=='GP':
+                    diff_sel = r_sel ** (step_size*norm_grad_vec)
+                # Checkh ere  if next_sel is not getting out of the grid
+                if True:
+                    next_sel[[dim_l, dim_h]] += diff_sel
+                else:
+                    pass
+                next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+                next_plan_id = self.store_plan( plan_xml )
 
-                # Code for better location finding
-                pass
-
-                if (cost_val <= contour_cost*(1+nexus_tolerance)) and (cost_val <= contour_cost*(1+nexus_tolerance)):
+                if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
                     grad_impact = (1-ada_momentum**step_size)
                     dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
 
                     # BisectionAPD code here with Simulating Recursion
-                    pass
+                    if bisection_lambda:
+                        sim_stck = [ ((cur_sel, prev_plan_id),(next_sel, next_plan_id)), ]
+                        while sim_stck:
+                            (sel_l, plan_id_l), (sel_r, plan_id_r) = sim_stck.pop()
+                            if progression=='AP':
+                                diff_sel = d_sel *  (step_size*norm_dir_vec)
+                                pass
+                            elif progression=='GP':
+                                diff_sel = r_sel ** (step_size*norm_dir_vec)
+                                pass
 
                     step_size *= 2 # Increasing Step size by 2
+                    prev_plan_id, prev_cost_val = next_plan_id, next_cost_val
                 else:
                     nexus_lock.acquire()
                     wasted_optimizer_calls += 2 # dir_vec and grad_vec lead to two wasted optimizer callss
@@ -67,10 +94,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
 
 
     
-
-
-
-
             while True:
                 x, y = cur_ix[dim_l], cur_ix[dim_h] # Checkpoint, index to selectivity, as build_sel is not needed
                 next_ix  = cur_ix[:]
