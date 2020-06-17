@@ -118,7 +118,11 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     else:
                         # Exponential rotation algorithm
                         pass
-                # Specify break condition in loop
+                        # 3 point initialization of search interval (1,3,4 Quarter from cur_sel amenable to search)
+                        pass
+                        # 2 point interpolation search (Instead of Exponential rotation, led to faster convergence using FPC
+                        pass
+                # Specify break condition in internally, not explicitly
 
             # First search include both ends of 2D exploration, rest will not include first end
             if dim_l+1 != dim_h:
