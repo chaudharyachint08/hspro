@@ -28,14 +28,19 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 norm_dir_vec = dir_vec/np.linalg.norm(dir_vec,1)
                 # Ahead movement based on d (direction vector)
                 if progression=='AP':
-                    diff_sel = d_sel *  (step_size*norm_dir_vec)
+                    diff_sel  = d_sel *  (step_size*norm_dir_vec)
+                    # Check here  if next_sel is not getting out of the grid
+                    if True:
+                        next_sel[[dim_l, dim_h]] += diff_sel
+                    else:
+                        pass
                 elif progression=='GP':
-                    diff_sel = r_sel ** (step_size*norm_dir_vec)
-                # Check here  if next_sel is not getting out of the grid
-                if True:
-                    next_sel[[dim_l, dim_h]] += diff_sel
-                else:
-                    pass
+                    ratio_sel = r_sel ** (step_size*norm_dir_vec)
+                    # Check here  if next_sel is not getting out of the grid
+                    if True:
+                        next_sel[[dim_l, dim_h]] *= ratio_sel
+                    else:
+                        pass
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
 
@@ -44,98 +49,77 @@ def ada_exploration(org_seed, total_dim, progression=progression):
 
                 # Finding 'g' vector, better direction finding
                 grad_vec = step_size*norm_dir_vec + corr_vec
-
                 # Finding point with 'g' vector
                 next_sel = np.copy(cur_sel)
                 norm_grad_vec = grad_vec/np.linalg.norm(grad_vec,1)
                 # Ahead movement based on g (gradient vector)
                 if progression=='AP':
                     diff_sel = d_sel *  (step_size*norm_grad_vec)
+                    # Check here  if next_sel is not getting out of the grid
+                    if True:
+                        next_sel[[dim_l, dim_h]] += diff_sel
+                    else:
+                        pass
                 elif progression=='GP':
-                    diff_sel = r_sel ** (step_size*norm_grad_vec)
-                # Check here  if next_sel is not getting out of the grid
-                if True:
-                    next_sel[[dim_l, dim_h]] += diff_sel # CHECKPOINT, not an additive change for GP
-                else:
-                    pass
+                    ratio_sel = r_sel ** (step_size*norm_grad_vec)
+                    # Check here  if next_sel is not getting out of the grid
+                    if True:
+                        next_sel[[dim_l, dim_h]] *= ratio_sel
+                    else:
+                        pass
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
-
                 if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
                     grad_impact = (1-ada_momentum**step_size)
                     dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
-
                     # BisectionAPD code here with Simulating Recursion
-                    sim_stck = [ ((cur_sel, prev_plan_id),(next_sel, next_plan_id)), ]
+                    sim_stck = [ ((cur_sel, prev_plan_id, prev_cost_val),(next_sel, next_plan_id, next_cost_val)), ]
                     while sim_stck:
-                        (sel_l, plan_id_l), (sel_r, plan_id_r) = sim_stck.pop()
+                        (sel_l, plan_id_l, cost_val_l), (sel_r, plan_id_r, cost_val_r) = sim_stck.pop()
                         if progression=='AP':
-                            srch_flg = True if ( np.linalg.norm(      (sel_l-sel_r),1) > d_sel         ) else False
-                            sel_m = (sel_l+sel_r)/2
+                            proxim_srch_flg = True if ( np.linalg.norm(      (sel_l-sel_r),1) > d_sel         ) else False
+                            sel_m = (sel_l+sel_r)/2 # Arithmetic Mean
                         elif progression=='GP':
-                            srch_flg = True if ( np.linalg.norm(np.log(sel_l/sel_r),1) > np.log(r_sel) ) else False
-                            pass
-                        if srch_flg:
-                    
-                            mid_cost_val, plan_xml = self.get_cost_and_plan(sel_m, plan_id=None, scale=scale)
-
-                            if bisection_lambda: # FPC Check can be done
-                                pass
-
+                            proxim_srch_flg = True if ( np.linalg.norm(np.log(sel_l/sel_r),1) > np.log(r_sel) ) else False
+                            sel_m = (sel_l*sel_r)**0.5 # Geometric mean
+                        if proxim_srch_flg and (plan_id_l != plan_id_r): # Base condition for Bisection search
+                            cost_val_m, plan_xml = self.get_cost_and_plan(sel_m, plan_id=None, scale=scale)
+                            plan_id_m = self.store_plan( plan_xml )
+                            if plan_id_m!=plan_id_l: # Left Side recursive search
+                                cost_proxy, _ = self.get_cost_and_plan(sel_m, plan_id=plan_id_l, scale=scale)
+                                if cost_proxy > cost_val_m*(1+bisection_lambda):
+                                    sim_stck.append( ((sel_l, plan_id_l, cost_val_l),(sel_m, plan_id_m, cost_val_m)) )
+                                    pass
+                            if plan_id_m!=plan_id_r: # Right Side recursive search
+                                cost_proxy, _ = self.get_cost_and_plan(sel_m, plan_id=plan_id_r, scale=scale)
+                                if cost_proxy > cost_val_m*(1+bisection_lambda):
+                                    sim_stck.append( ((sel_m, plan_id_m, cost_val_m),(sel_r, plan_id_r, cost_val_r)) )
+                            # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
+                            self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val_m/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
+                            if plan_id_m in p2s_m:
+                                p2s_m[plan_id_m].add(tuple(sel_m))
+                            else:
+                                p2s_m[plan_id_m] = {tuple(sel_m)}
+                            seed_sel_ls.append( tuple(sel_m) )
                     step_size *= 2 # Increasing Step size by 2
-                    prev_plan_id, prev_cost_val = next_plan_id, next_cost_val
+                    cur_sel, prev_plan_id, prev_cost_val = next_sel, next_plan_id, next_cost_val
+                    # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
+                    self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(next_cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
+                    if next_plan_id in p2s_m:
+                        p2s_m[next_plan_id].add(tuple(next_sel))
+                    else:
+                        p2s_m[next_plan_id] = {tuple(next_sel)}
+                    seed_sel_ls.append( tuple(next_sel) )
                 else:
                     nexus_lock.acquire()
-                    wasted_optimizer_calls += 2 # dir_vec and grad_vec lead to two wasted optimizer callss
+                    wasted_optimizer_calls += 2 # dir_vec and grad_vec lead to two extra optimizer calls
                     nexus_lock.release()
-
                     if step_size>1:
                         step_size /= 2 # Decreasing Step size by 2
                     else:
                         # Exponential rotation algorithm
                         pass
                 # Specify break condition in loop
-
-
-
-    
-            while True:
-                x, y = cur_ix[dim_l], cur_ix[dim_h] # Checkpoint, index to selectivity, as build_sel is not needed
-                next_ix  = cur_ix[:]
-                next_ix[dim_h] -= 1
-                next_sel = self.build_sel(next_ix)
-                cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
-                if cost_val < contour_cost:  # C_opt[(S(y−1)] < C
-                    # S = S(x+1)
-                    x += 1
-                    if (not (0<=x+1 and x+1<=self.resolution_p-1)):
-                        break
-                    next_ix  = cur_ix[:]
-                    next_ix[dim_l] += 1
-                    next_sel = self.build_sel(next_ix)
-                    cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
-                    nexus_lock.acquire()
-                    wasted_optimizer_calls += 1
-                    nexus_lock.release()
-                else:
-                    # S = S(y−1)
-                    y -= 1
-                    if (not (0<=y-1 and y-1<=self.resolution_p-1)) :
-                        break
-
-                # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
-                self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()
-                next_plan_id = self.store_plan( plan_xml )
-                if next_plan_id in p2s_m:
-                    p2s_m[next_plan_id].add(next_sel)
-                else:
-                    p2s_m[next_plan_id] = {next_sel}
-                cur_sel[dim_l], cur_sel[dim_h] = x, y
-                seed_sel_ls.append( tuple(cur_sel) )
-                # non-existence of either S(x+1) or S(y−1)
-                if (not (0<=x+1 and x+1<=self.resolution_p-1)) or (not (0<=y-1 and y-1<=self.resolution_p-1)) :
-                    break
-
 
             # First search include both ends of 2D exploration, rest will not include first end
             if dim_l+1 != dim_h:
