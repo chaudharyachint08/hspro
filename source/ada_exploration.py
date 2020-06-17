@@ -4,7 +4,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
     # print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
     min_sel, max_sel = min(self.sel_range_p_inc), max(self.sel_range_p_inc)
     if progression=='AP':
-        d_sel = (max_sel-min_sel) / (len(self.sel_range_p_inc)-1)
+        d_sel =               (max_sel-min_sel) / (len(self.sel_range_p_inc)-1)
     elif progression=='GP':
         r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_p_inc)-1) )
 
@@ -89,7 +89,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                                 cost_proxy, _ = self.get_cost_and_plan(sel_m, plan_id=plan_id_l, scale=scale)
                                 if cost_proxy > cost_val_m*(1+bisection_lambda):
                                     sim_stck.append( ((sel_l, plan_id_l, cost_val_l),(sel_m, plan_id_m, cost_val_m)) )
-                                    pass
                             if plan_id_m!=plan_id_r: # Right Side recursive search
                                 cost_proxy, _ = self.get_cost_and_plan(sel_m, plan_id=plan_id_r, scale=scale)
                                 if cost_proxy > cost_val_m*(1+bisection_lambda):
