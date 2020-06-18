@@ -45,7 +45,39 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 next_plan_id = self.store_plan( plan_xml )
 
                 # Correction Vector, Check here  if corr_vec is not getting out of the grid
+                orth_vec = np.array([1.0,1.0])
+                orth_vec[1] = -1*dir_vec[0]*orth_vec[0]/dir_vec[1]
+
+                while  True: # This loop will break for either of two orthogonal of dir_vec                    
+                    orth_sel = np.copy(next_sel)
+                    norm_orth_vec = orth_vec/np.linalg.norm(orth_vec,1)
+                    # Ahead movement based on c (direction vector)
+                    if progression=='AP':
+                        diff_sel  = d_sel *  (1*norm_orth_vec)
+                        # Check here  if next_sel is not getting out of the grid
+                        if True:
+                            orth_sel[[dim_l, dim_h]] += diff_sel
+                        else:
+                            pass
+                    elif progression=='GP':
+                        ratio_sel = r_sel ** (1*norm_orth_vec)
+                        # Check here  if next_sel is not getting out of the grid
+                        if True:
+                            orth_sel[[dim_l, dim_h]] *= ratio_sel
+                        else:
+                            pass
+                    orth_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=next_plan_id, scale=scale)
+                    if (next_cost_val<contour_cost) == (next_cost_val<orth_cost_val):
+                        break # orth_vec is in correct direction
+                    else:
+                        orth_vec *= -1.0
+
+                # CHECKPOINT
                 pass
+
+
+
+
 
                 # Finding 'g' vector, better direction finding
                 grad_vec = step_size*norm_dir_vec + corr_vec
