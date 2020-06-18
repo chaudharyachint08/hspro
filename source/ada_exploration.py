@@ -47,8 +47,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Correction Vector, Check here  if corr_vec is not getting out of the grid
                 orth_vec = np.array([1.0,1.0])
                 orth_vec[1] = -1*dir_vec[0]*orth_vec[0]/dir_vec[1]
-
-                while  True: # This loop will break for either of two orthogonal of dir_vec                    
+                while  True: # This loop will break for either of two orthogonal to dir_vec
                     orth_sel = np.copy(next_sel)
                     norm_orth_vec = orth_vec/np.linalg.norm(orth_vec,1)
                     # Ahead movement based on c (direction vector)
@@ -66,21 +65,23 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                             orth_sel[[dim_l, dim_h]] *= ratio_sel
                         else:
                             pass
-                    orth_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=next_plan_id, scale=scale)
+                    # Assumption that Plan will remain same at this small interval of orthogonal step
+                    orth_cost_val, _ = self.get_cost_and_plan(orth_sel, plan_id=next_plan_id, scale=scale)
                     if (next_cost_val<contour_cost) == (next_cost_val<orth_cost_val):
                         break # orth_vec is in correct direction
                     else:
                         orth_vec *= -1.0
 
-                # CHECKPOINT
-                pass
-
-
-
-
-
+                # Two point form for finding desired selectivity point
+                slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
+                desired_sel = next_sel + (contour_cost-next_cost_val)/slope
+                if progression=='AP':
+                    corr_vec =        desired_sel - next_sel
+                elif progression=='GP':
+                    corr_vec = np.log(desired_sel / next_sel)
                 # Finding 'g' vector, better direction finding
                 grad_vec = step_size*norm_dir_vec + corr_vec
+
                 # Finding point with 'g' vector
                 next_sel = np.copy(cur_sel)
                 norm_grad_vec = grad_vec/np.linalg.norm(grad_vec,1)
