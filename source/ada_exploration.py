@@ -203,9 +203,12 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         # Use optimizer calls only when plans on both end are not same, else use FPC module
                         next_plan_id = self.store_plan( plan_xml )
 
-                        pass
-
-
+                        while True:
+                            norm_start_vec, norm_end_vec = start_vec/np.linalg.norm(start_vec,1), end_vec/np.linalg.norm(end_vec,1)
+                            if np.linalg.norm((norm_start_vec-norm_end_vec),1) <= 0.035: # Approximatle sin(2 degree)
+                                break
+                            mid_vec = (start_vec+end_vec)/2
+                        dir_vec = (start_vec+end_vec)/2
 
 
             # First search include both ends of 2D exploration, rest will not include first end
