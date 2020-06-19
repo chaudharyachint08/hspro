@@ -1,0 +1,10 @@
+ss_sold_date_sk = d_date_sk | +1
+ss_item_sk = i_item_sk | +1
+ss_store_sk = s_store_sk | +1
+
+# cd_gender = 'F' | +1
+# cd_marital_status = 'D' | +1
+# cd_education_status = 'Primary' | +1
+# d_year = 2000 | +1
+# s_state in ('TN') | +1
+# i_current_price <= 15 | +1

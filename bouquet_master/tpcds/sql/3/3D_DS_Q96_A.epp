@@ -1,0 +1,9 @@
+ss_sold_time_sk = time_dim.t_time_sk | +1
+ss_hdemo_sk = hd_demo_sk | +1
+ss_store_sk = s_store_sk | +1
+
+# t_hour = 8 | +1
+# t_minute >= 30 | +1
+# hd_dep_count = 2 | +1
+# s_store_name = 'ese' | +1
+# ss_list_price <= 19.5 | +1
