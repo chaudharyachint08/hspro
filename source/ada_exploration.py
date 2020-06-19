@@ -1,3 +1,23 @@
+def boundary_constraint(cur_sel, next_sel, dim_tuple, step_size, progression, next_cost_val, contour_cost):
+    dim_l, dim_h = dim_tuple
+    if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
+        step_back = False
+    else:
+        step_back = True
+
+    slope_1 = (next_sel[dim_h]-cur_sel[dim_h]) / (next_sel[dim_l]-cur_sel[dim_l])
+    elif progression=='AP':
+        if   right_boundary:
+            pass
+        elif left_boundary:
+            pass
+        elif top_boundary:
+            pass
+        elif bottom_boundary:
+            pass
+    if progression=='GP':
+        pass
+
 def ada_exploration(org_seed, total_dim, progression=progression):
     "Nested function for exploration using seed and contour generation"
     nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
