@@ -1,22 +1,30 @@
-def boundary_constraint(cur_sel, next_sel, dim_tuple, step_size, progression, next_cost_val, contour_cost):
+def boundary_constraint(cur_sel, next_sel, dim_tuple):
+    if (min_sel<=next_sel[list(dim_tuple)]).all() and (next_sel[list(dim_tuple)]<=max_sel).all():
+        return False, next_sel
     dim_l, dim_h = dim_tuple
+    cur_sel, next_sel = np.copy(cur_sel), np.copy(next_sel)
+    # Using Point slope form, (y-y1) = slope*(x-x1)
+    slope = (next_sel[dim_h]-cur_sel[dim_h]) / (next_sel[dim_l]-cur_sel[dim_l])
+    # Finding X or Y value accordingly at all boundary which specifies constraints
+    y_val_at_max_x = (cur_sel[dim_h]+(max_sel-cur_sel[dim_l])*slope)
+    y_val_at_min_x = (cur_sel[dim_h]+(min_sel-cur_sel[dim_l])*slope)
+    x_val_at_max_y = (cur_sel[dim_l]+(max_sel-cur_sel[dim_h])/slope)
+    x_val_at_min_y = (cur_sel[dim_l]+(min_sel-cur_sel[dim_h])/slope)
+    # Finding if it goes beyond ESS, by which side of ESS, and marking intesection points at boundary
+    if   min_sel<=y_val_at_max_x and y_val_at_max_x<=max_sel:  # x = max_sel, limit constaint on y (right  boundary)
+        x,y = max_sel, y_val_at_max_x
+    elif min_sel<=y_val_at_min_x and y_val_at_min_x<=max_sel:  # x = min_sel, limit constaint on y (left   boundary)
+        x,y = min_sel, y_val_at_min_x
+    elif min_sel<=x_val_at_max_y and x_val_at_max_y<=max_sel:  # y = max_sel, limit constaint on x (top    boundary)
+        y,x = max_sel, x_val_at_max_y
+    elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel:  # y = min_sel, limit constaint on x (bottom boundary)
+        y,x = min_sel, x_val_at_min_y
+    next_sel[list(dim_tuple)] = [x,y]
+    next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
     if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
-        step_back = False
-    else:
-        step_back = True
-
-    slope_1 = (next_sel[dim_h]-cur_sel[dim_h]) / (next_sel[dim_l]-cur_sel[dim_l])
-    elif progression=='AP':
-        if   right_boundary:
-            pass
-        elif left_boundary:
-            pass
-        elif top_boundary:
-            pass
-        elif bottom_boundary:
-            pass
-    if progression=='GP':
-        pass
+        return True, next_sel
+    else: # Intersection point 
+        return True, next_sel # Job of this function is to return constrained vector in ESS
 
 def ada_exploration(org_seed, total_dim, progression=progression):
     "Nested function for exploration using seed and contour generation"
