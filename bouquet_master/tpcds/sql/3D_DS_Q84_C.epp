@@ -1,0 +1,7 @@
+cd_demo_sk = c_current_cdemo_sk | +1
+hd_demo_sk = c_current_hdemo_sk | +1
+sr_cdemo_sk = cd_demo_sk | +1
+
+# ib_lower_bound >= 52066 | +1
+# ib_upper_bound <= 52066 + 50000 | +1
+# ca_gmt_offset=-7 | +1

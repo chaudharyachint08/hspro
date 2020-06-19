@@ -1,0 +1,5 @@
+d_date_sk = cs_ship_date_sk | +1
+w_warehouse_sk = cs_warehouse_sk | +1
+sm_ship_mode_sk = cs_ship_mode_sk | +1
+
+# d_year = 2002 | +1

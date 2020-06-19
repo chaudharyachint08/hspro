@@ -1,0 +1,7 @@
+c_current_addr_sk = ca_address_sk | +1
+hd_demo_sk = c_current_hdemo_sk | +1
+ib_income_band_sk = hd_income_band_sk | +1
+
+# ib_lower_bound >= 52066 | +1
+# ib_upper_bound <= 52066 + 50000 | +1
+# ca_gmt_offset=-7 | +1
