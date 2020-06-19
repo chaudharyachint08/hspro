@@ -11,16 +11,18 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
     x_val_at_max_y = (cur_sel[dim_l]+(max_sel-cur_sel[dim_h])/slope)
     x_val_at_min_y = (cur_sel[dim_l]+(min_sel-cur_sel[dim_h])/slope)
     # Finding if it goes beyond ESS, by which side of ESS, and marking intesection points at boundary
-    if   min_sel<=y_val_at_max_x and y_val_at_max_x<=max_sel:  # x = max_sel, limit constaint on y (right  boundary)
+    if   min_sel<=y_val_at_max_x and y_val_at_max_x<=max_sel: # x = max_sel, limit constaint on y (right  boundary)
         x,y = max_sel, y_val_at_max_x
-    elif min_sel<=y_val_at_min_x and y_val_at_min_x<=max_sel:  # x = min_sel, limit constaint on y (left   boundary)
+    elif min_sel<=y_val_at_min_x and y_val_at_min_x<=max_sel: # x = min_sel, limit constaint on y (left   boundary)
         x,y = min_sel, y_val_at_min_x
-    elif min_sel<=x_val_at_max_y and x_val_at_max_y<=max_sel:  # y = max_sel, limit constaint on x (top    boundary)
+    elif min_sel<=x_val_at_max_y and x_val_at_max_y<=max_sel: # y = max_sel, limit constaint on x (top    boundary)
         y,x = max_sel, x_val_at_max_y
-    elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel:  # y = min_sel, limit constaint on x (bottom boundary)
+    elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel: # y = min_sel, limit constaint on x (bottom boundary)
         y,x = min_sel, x_val_at_min_y
     next_sel[list(dim_tuple)] = [x,y]
     next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
+    return True, next_sel
+    # Below code in unreachable for future use
     if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
         return True, next_sel
     else: # Intersection point 
@@ -76,7 +78,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         diff_sel  = d_sel *  (1*norm_orth_vec)
                         # Check here  if next_sel is not getting out of the grid
                         end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
-                        if not (abs(orth_sel-next_sel)<epsilon).any(): # Halt if orth_sel is same as next_sel
+                        if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
                             continue
@@ -84,7 +86,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         ratio_sel = r_sel ** (1*norm_orth_vec)
                         # Check here  if next_sel is not getting out of the grid
                         end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
-                        if not (abs(orth_sel-next_sel)<epsilon).any(): # Halt if orth_sel is same as next_sel
+                        if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
                             continue
@@ -97,7 +99,11 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     else:
                         orth_vec *= -1.0
                 if (not corr_condition) and (not ((contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)))):
-                    break # Break outer while loop for searching next point
+                    if step_size>1:
+                        step_size /= 2
+                        continue
+                    else:
+                        break # Break outer while loop for searching next point
                 else:
                     if corr_condition:
                         # Two point form for finding desired selectivity point
@@ -225,7 +231,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                                 break
                             mid_vec = (start_vec+end_vec)/2
                         dir_vec = (start_vec+end_vec)/2
-
 
             # First search include both ends of 2D exploration, rest will not include first end
             if dim_l+1 != dim_h:
