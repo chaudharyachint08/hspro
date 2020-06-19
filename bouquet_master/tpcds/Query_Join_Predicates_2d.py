@@ -126,6 +126,7 @@ dict_4d = {
 (('Q19',),'HYBRID')             :[	'd_date_sk = ss_sold_date_sk | ss_item_sk = i_item_sk | ss_customer_sk = c_customer_sk | c_current_addr_sk = ca_address_sk',
 									'd_date_sk = ss_sold_date_sk | ss_store_sk = s_store_sk | ss_customer_sk = c_customer_sk | c_current_addr_sk = ca_address_sk',
 									'ss_item_sk = i_item_sk | ss_store_sk = s_store_sk | ss_customer_sk = c_customer_sk | c_current_addr_sk = ca_address_sk',],
+(('Q19',),'STAR')               :[	'd_date_sk = ss_sold_date_sk | ss_item_sk = i_item_sk | ss_store_sk = s_store_sk | ss_customer_sk = c_customer_sk',],
 (('Q26',),'STAR')               :[	'cs_sold_date_sk = d_date_sk | cs_item_sk = i_item_sk | cs_bill_cdemo_sk = cd_demo_sk | cs_promo_sk = p_promo_sk',],
 (('Q27',),'STAR')               :[	'ss_sold_date_sk = d_date_sk | ss_item_sk = i_item_sk | ss_store_sk = s_store_sk | ss_cdemo_sk = cd_demo_sk',],
 (('Q62',),'STAR')               :[	'd_date_sk = ws_ship_date_sk | w_warehouse_sk = ws_warehouse_sk | sm_ship_mode_sk = ws_ship_mode_sk | web_site_sk = ws_web_site_sk',],
@@ -148,7 +149,6 @@ dict_4d = {
 dict_5d = {
 (('Q19',),'HYBRID')             :[	'd_date_sk = ss_sold_date_sk | ss_item_sk = i_item_sk | ss_store_sk = s_store_sk | ss_customer_sk = c_customer_sk | c_current_addr_sk = ca_address_sk',],
 (('Q84',),'HYBRID')             :[	'c_current_addr_sk = ca_address_sk | cd_demo_sk = c_current_cdemo_sk | hd_demo_sk = c_current_hdemo_sk | ib_income_band_sk = hd_income_band_sk | sr_cdemo_sk = cd_demo_sk',],
-
 (('Q91',),'HYBRID')             :[	'cr_returned_date_sk = d_date_sk | cr_returning_customer_sk = c_customer_sk | cd_demo_sk = c_current_cdemo_sk | hd_demo_sk = c_current_hdemo_sk | ca_address_sk = c_current_addr_sk',
 									'cr_call_center_sk = cc_call_center_sk | cr_returning_customer_sk = c_customer_sk | cd_demo_sk = c_current_cdemo_sk | hd_demo_sk = c_current_hdemo_sk | ca_address_sk = c_current_addr_sk',
 									'cr_call_center_sk = cc_call_center_sk | cr_returned_date_sk = d_date_sk | cr_returning_customer_sk = c_customer_sk | hd_demo_sk = c_current_hdemo_sk | ca_address_sk = c_current_addr_sk',
