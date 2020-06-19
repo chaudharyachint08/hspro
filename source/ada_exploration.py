@@ -57,18 +57,10 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Ahead movement based on d (direction vector)
                 if progression=='AP':
                     diff_sel  = d_sel *  (step_size*norm_dir_vec)
-                    # Check here  if next_sel is not getting out of the grid
-                    if ((next_sel[[dim_l, dim_h]] + diff_sel)>=min_sel).all() and ((next_sel[[dim_l, dim_h]] + diff_sel)<=max_sel).all():
-                        next_sel[[dim_l, dim_h]] += diff_sel
-                    else:
-                        pass
+                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_dir_vec)
-                    # Check here  if next_sel is not getting out of the grid
-                    if ((next_sel[[dim_l, dim_h]] * ratio_sel)>=min_sel).all() and ((next_sel[[dim_l, dim_h]] * ratio_sel)<=max_sel).all():
-                        next_sel[[dim_l, dim_h]] *= ratio_sel
-                    else:
-                        pass
+                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
 
@@ -83,18 +75,16 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     if progression=='AP':
                         diff_sel  = d_sel *  (1*norm_orth_vec)
                         # Check here  if next_sel is not getting out of the grid
-                        if ((orth_sel[[dim_l, dim_h]] + diff_sel)>=min_sel).all() and ((orth_sel[[dim_l, dim_h]] + diff_sel)<=max_sel).all():
-                            orth_sel[[dim_l, dim_h]] += diff_sel
-                        else: # Halt as even Unit length orthogonal vector cannot be found
+                        end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
+                        if not (abs(orth_sel-next_sel)<epsilon).any(): # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
                             continue
                     elif progression=='GP':
                         ratio_sel = r_sel ** (1*norm_orth_vec)
                         # Check here  if next_sel is not getting out of the grid
-                        if ((orth_sel[[dim_l, dim_h]] * ratio_sel)>=min_sel).all() and ((orth_sel[[dim_l, dim_h]] * ratio_sel)<=max_sel).all():
-                            orth_sel[[dim_l, dim_h]] *= ratio_sel
-                        else:
+                        end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
+                        if not (abs(orth_sel-next_sel)<epsilon).any(): # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
                             continue
@@ -106,17 +96,21 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         break # orth_vec is in correct direction
                     else:
                         orth_vec *= -1.0
-                if not corr_condition:
+                if (not corr_condition) and (not ((contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)))):
                     break # Break outer while loop for searching next point
-                # Two point form for finding desired selectivity point
-                slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
-                desired_sel = next_sel + (contour_cost-next_cost_val)/slope
-                if progression=='AP':
-                    corr_vec =        desired_sel - next_sel
-                elif progression=='GP':
-                    corr_vec = np.log(desired_sel / next_sel)
-                # Finding 'g' vector, better direction finding
-                grad_vec = step_size*norm_dir_vec + corr_vec
+                else:
+                    if corr_condition:
+                        # Two point form for finding desired selectivity point
+                        slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
+                        desired_sel = next_sel + (contour_cost-next_cost_val)/slope
+                        if progression=='AP':
+                            corr_vec =        desired_sel - next_sel
+                        elif progression=='GP':
+                            corr_vec = np.log(desired_sel / next_sel)
+                        # Finding 'g' vector, better direction finding
+                        grad_vec = step_size*norm_dir_vec + corr_vec
+                    else:
+                        grad_vec = step_size*norm_dir_vec + 0.0 # No correction is required
 
                 # Finding point with 'g' vector
                 next_sel = np.copy(cur_sel)
@@ -125,17 +119,11 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 if progression=='AP':
                     diff_sel = d_sel *  (step_size*norm_grad_vec)
                     # Check here  if next_sel is not getting out of the grid
-                    if ((next_sel[[dim_l, dim_h]] + diff_sel)>=min_sel).all() and ((next_sel[[dim_l, dim_h]] + diff_sel)<=max_sel).all():
-                        next_sel[[dim_l, dim_h]] += diff_sel
-                    else:
-                        pass
+                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_grad_vec)
                     # Check here  if next_sel is not getting out of the grid
-                    if ((next_sel[[dim_l, dim_h]] * ratio_sel)>=min_sel).all() and ((next_sel[[dim_l, dim_h]] * ratio_sel)<=max_sel).all():
-                        next_sel[[dim_l, dim_h]] *= ratio_sel
-                    else:
-                        pass
+                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
                 if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
