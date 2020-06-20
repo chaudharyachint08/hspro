@@ -67,7 +67,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
-
                 # Correction Vector, Check here  if corr_vec is not getting out of the grid
                 orth_vec = np.array([1.0,1.0])
                 orth_vec[1] = -1*dir_vec[0]*orth_vec[0]/dir_vec[1]
@@ -185,7 +184,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         # 4 point initialization of search interval (1,3,4 Quarter from cur_sel amenable to search)
                         top_vec, left_vec, bottom_vec, right_vec = np.array([0.0,1.0]), np.array([-1.0,0.0]), np.array([0.0,-1.0]), np.array([1.0,0.0])
                         top_sel, left_sel, bottom_sel, right_sel = np.copy(cur_sel),    np.copy(cur_sel),     np.copy(cur_sel),     np.copy(cur_sel)
-
                         # (Finding 4 selectivity points and constraining each of them to be within selectivity space )
                         # In one of three interval via 4 point intialization will obtain desired cost value
                         if   progression=='AP':
@@ -206,24 +204,64 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                             break # Break search as rotation based correction is not possible now, due to lack on any side to rotate with unit length
                         # Costing Viable intervals and check if contour_cost lies in any interval
                         viable_sel_cost_plan = []
-                        for start_sel, end_sel in viable_intervals:
+                        for viable_ix, (start_sel, end_sel) in enumerate(viable_intervals):
                             (start_cost_val, start_plan_xml), (end_cost_val, end_plan_xml) = self.get_cost_and_plan(start_sel, plan_id=None, scale=scale), self.get_cost_and_plan(end_sel, plan_id=None, scale=scale)
                             start_plan_id, end_plan_id = self.store_plan( start_plan_xml ), self.store_plan( end_plan_xml )
-                            if () or ():
+                            if   (start_cost_val<=contour_cost and contour_cost<=end_cost_val):
+                                break
+                            elif (end_cost_val<=contour_cost and contour_cost<=start_cost_val):
+                                (start_sel, start_cost_val, start_plan_id), (end_sel, end_cost_val, end_plan_id) = (end_sel, end_cost_val, end_plan_id), (start_sel, start_cost_val, start_plan_id)
                                 break
                         else: # if contour_cost does not lie in either of interval, then take maximum or minimum cost step depending of prev_cost_val
-                            pass
+                            if   prev_cost_val < contour_cost:
+                                if right_end and top_end:
+                                    break
+                                right_cost_val  = self.get_cost_and_plan( right_sel, plan_id=None, scale=scale)[0] if (not right_end) else -np.inf
+                                top_cost_val    = self.get_cost_and_plan( top_sel,   plan_id=None, scale=scale)[0] if (not top_end)   else -np.inf
+                                dir_vec = right_vec if (right_cost_val > top_cost_val) else top_vec
+                            elif prev_cost_val >  contour_cost:
+                                if left_end and bottom_end:
+                                    break
+                                left_cost_val   = self.get_cost_and_plan( left_sel,   plan_id=None, scale=scale)[0] if (not left_end)   else np.inf
+                                bottom_cost_val = self.get_cost_and_plan( bottom_sel, plan_id=None, scale=scale)[0] if (not bottom_end) else np.inf
+                                dir_vec = left_vec if (left_cost_val < bottom_cost_val) else bottom_vec
                             continue
-                        # If an interval is selected within for loop, make Binary search for finding correction direction
-                        # CHECKPOINT, Deciding which interval to continur search into for next direction, dir_vec will be updated here
+                        nexus_lock.acquire()
+                        wasted_optimizer_calls += (2+viable_ix) # Only Viable intervals will lead to optimizer call
+                        nexus_lock.release()
+                        # If an interval is selected within for loop, make Binary search when plans are different, interpolation search when same for finding dir_vec
                         # 2 point interpolation search (Instead of Exponential rotation, led to faster convergence using FPC
                         # Use optimizer calls only when plans on both end are not same, else use FPC module
                         while True:
-                            norm_start_vec, norm_end_vec = start_vec/np.linalg.norm(start_vec,1), end_vec/np.linalg.norm(end_vec,1)
-                            if np.linalg.norm((norm_start_vec-norm_end_vec),1) <= 0.035: # Approximatle sin(2 degree)
-                                break
-                            mid_vec = (start_vec+end_vec)/2
-                        dir_vec = (start_vec+end_vec)/2
+                            if   progression=='AP':
+                                if np.linalg.norm(      (norm_start_vec-norm_end_vec),1) <=        0.035*d_sel: # Approximatle sin(2 degree precision)
+                                    break
+                                else:
+                                    mid_sel = (start_sel+end_sel)/2
+                            elif progression=='GP':
+                                if np.linalg.norm(np.log(norm_start_vec/norm_end_vec),1) <= np.log(0.035*r_sel): # Approximatle sin(2 degree precision)
+                                    break
+                                else:
+                                    mid_sel = (start_sel*end_sel)**0.5
+                            # Binary search will use FPC, when plans on both end is same
+                            mid_cost_val, mid_plan_xml = self.get_cost_and_plan(mid_sel, plan_id=(None if (start_plan_id!=end_plan_id) else start_plan_id), scale=scale)
+                            if start_plan_id!=end_plan_id:
+                                mid_plan_id = self.store_plan( mid_plan_xml )
+                            if start_plan_id!=end_plan_id:
+                                nexus_lock.acquire()
+                                wasted_optimizer_calls += 1 # Optimizer call only when plans on both end are different
+                                nexus_lock.release()
+                            if mid_cost_val < contour_cost:
+                                start_sel, start_cost_val, start_plan_id = mid_sel, mid_cost_val, mid_plan_id
+                            else:
+                                end_sel,   end_cost_val,   end_plan_id   = mid_sel, mid_cost_val, mid_plan_id
+                        # Once desired value is obtained, use selectivity to find dir_vec
+                        if   progression=='AP':
+                            dir_vec =         mid_sel[[dim_l, dim_h]]-cur_sel[[dim_l, dim_h]]
+                        elif progression=='AP':
+                            dir_vec = np.log( mid_sel[[dim_l, dim_h]]/cur_sel[[dim_l, dim_h]] )
+                        dir_vec = dir_vec / np.linalg(dir_vec,1)
+
 
             # First search include both ends of 2D exploration, rest will not include first end
             if dim_l+1 != dim_h:
