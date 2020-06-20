@@ -20,9 +20,9 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
     elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel: # y = min_sel, limit constaint on x (bottom boundary)
         y,x = min_sel, x_val_at_min_y
     next_sel[list(dim_tuple)] = [x,y]
-    next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
     return True, next_sel
     # Below code in unreachable for future use
+    next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
     if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
         return True, next_sel
     else: # Intersection point 
@@ -59,10 +59,12 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Ahead movement based on d (direction vector)
                 if progression=='AP':
                     diff_sel  = d_sel *  (step_size*norm_dir_vec)
-                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
+                    next_sel[[dim_l, dim_h]]+=diff_sel
+                    end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_dir_vec)
-                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
+                    next_sel[[dim_l, dim_h]]*=ratio_sel
+                    end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
 
@@ -76,16 +78,16 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     # Ahead movement based on c (direction vector)
                     if progression=='AP':
                         diff_sel  = d_sel *  (1*norm_orth_vec)
-                        # Check here  if next_sel is not getting out of the grid
-                        end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
+                        orth_sel[[dim_l, dim_h]]+=diff_sel
+                        end_point, orth_sel = boundary_constraint(next_sel, orth_sel,  (dim_l, dim_h))
                         if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
                             continue
                     elif progression=='GP':
                         ratio_sel = r_sel ** (1*norm_orth_vec)
-                        # Check here  if next_sel is not getting out of the grid
-                        end_point, orth_sel = boundary_constraint(next_sel, (orth_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
+                        orth_sel[[dim_l, dim_h]]*=ratio_sel
+                        end_point, orth_sel = boundary_constraint(next_sel, orth_sel, (dim_l, dim_h))
                         if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                             loop_count-=1
                             orth_vec *= -1.0
@@ -124,12 +126,12 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Ahead movement based on g (gradient vector)
                 if progression=='AP':
                     diff_sel = d_sel *  (step_size*norm_grad_vec)
-                    # Check here  if next_sel is not getting out of the grid
-                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]+diff_sel),  (dim_l, dim_h))
+                    next_sel[[dim_l, dim_h]]+=diff_sel
+                    end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_grad_vec)
-                    # Check here  if next_sel is not getting out of the grid
-                    end_point, next_sel = boundary_constraint(cur_sel, (next_sel[[dim_l, dim_h]]*ratio_sel), (dim_l, dim_h))
+                    next_sel[[dim_l, dim_h]]*=ratio_sel
+                    end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
                 if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
@@ -179,52 +181,43 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     if step_size>1:
                         step_size /= 2 # Decreasing Step size by 2
                     else:
-                        # Exponential rotation algorithm
-                        pass
-                        # 3 point initialization of search interval (1,3,4 Quarter from cur_sel amenable to search)
-                        top_vec, left_vec, diag_vec = np.array([0.0,1.0]), np.array([-1.0,0.0]), np.array([1.0,-1.0])
-                        top_sel, left_sel, diag_sel = np.copy(cur_sel),    np.copy(cur_sel),     np.copy(cur_sel)
-                        norm_top_vec, norm_left_vec, norm_diag_vec = top_vec/np.linalg.norm(top_vec,1), left_vec/np.linalg.norm(left_vec,1), diag_vec/np.linalg.norm(diag_vec,1)
+                        # Exponential rotation algorithm for finding direction in case of failed tuning with minimum step size
+                        # 4 point initialization of search interval (1,3,4 Quarter from cur_sel amenable to search)
+                        top_vec, left_vec, bottom_vec, right_vec = np.array([0.0,1.0]), np.array([-1.0,0.0]), np.array([0.0,-1.0]), np.array([1.0,0.0])
+                        top_sel, left_sel, bottom_sel, right_sel = np.copy(cur_sel),    np.copy(cur_sel),     np.copy(cur_sel),     np.copy(cur_sel)
 
-                        # (Finding 3 selectivity points and constraining each of them to be within selectivity space )
-                        # In one of two interval via 3 point intialization will increase cost value
+                        # (Finding 4 selectivity points and constraining each of them to be within selectivity space )
+                        # In one of three interval via 4 point intialization will obtain desired cost value
+                        if   progression=='AP':
+                            top_diff_sel, left_diff_sel, bottom_diff_sel, right_diff_sel  =  d_sel *  (1*top_vec), d_sel *  (1*left_vec), d_sel *  (1*bottom_vec), d_sel *  (1*right_vec)
+                            top_sel[[dim_l, dim_h]], left_sel[[dim_l, dim_h]], bottom_sel[[dim_l, dim_h]], right_sel[[dim_l, dim_h]]  =  top_sel[[dim_l, dim_h]]+top_diff_sel, left_sel[[dim_l, dim_h]]+left_diff_sel, bottom_sel[[dim_l, dim_h]]+bottom_diff_sel, right_sel[[dim_l, dim_h]]+right_diff_sel
+                        elif progression=='AP':
+                            top_ratio_sel, left_ratio_sel, bottom_ratio_sel, right_ratio_sel  =  r_sel ** (1*top_vec), r_sel ** (1*left_vec), r_sel ** (1*bottom_vec), r_sel ** (1*right_vec)
+                            top_sel[[dim_l, dim_h]], left_sel[[dim_l, dim_h]], bottom_sel[[dim_l, dim_h]], right_sel[[dim_l, dim_h]]  =  top_sel[[dim_l, dim_h]]*top_ratio_sel, left_sel[[dim_l, dim_h]]*left_ratio_sel, bottom_sel[[dim_l, dim_h]]*bottom_ratio_sel, right_sel[[dim_l, dim_h]]*right_ratio_sel
 
-                        if progression=='AP':
-                            top_diff_sel, left_diff_sel, diag_diff_sel = d_sel *  (1*norm_top_vec), d_sel *  (1*norm_left_vec), d_sel *  (1*norm_diag_vec)
-                            if  (( top_sel[[dim_l, dim_h]] +  top_diff_sel)>=min_sel).all() and (( top_sel[[dim_l, dim_h]] +  top_diff_sel)<=max_sel).all() \
-                            and ((diag_sel[[dim_l, dim_h]] + diag_diff_sel)>=min_sel).all() and ((diag_sel[[dim_l, dim_h]] + diag_diff_sel)<=max_sel).all():
-                                if ((left_sel[[dim_l, dim_h]] + left_diff_sel)>=min_sel).all() and ((left_sel[[dim_l, dim_h]] + left_diff_sel)<=max_sel).all():
-                                    left_sel[[dim_l, dim_h]] = left_sel[[dim_l, dim_h]]+left_diff_sel
-                                else:  # To prevent crossing left boundary of ESS
-                                    if ((left_sel[[dim_l, dim_h]]+d_sel*np.array([0.0, -1.0]))>=min_sel).all() and ((left_sel[[dim_l, dim_h]]+d_sel*np.array([0.0, -1.0]))<=max_sel).all():
-                                        left_sel[[dim_l, dim_h]] = left_sel[[dim_l, dim_h]]+d_sel*np.array([0.0, -1.0])
-                                    else:
-                                        break
-                                top_sel[[dim_l, dim_h]], diag_sel[[dim_l, dim_h]] = top_sel[[dim_l, dim_h]]+top_diff_sel, diag_sel[[dim_l, dim_h]]+diag_diff_sel
-                            else:
-                                break # Simple termination, if rotation failed, we are
-                        elif progression=='GP':
-                            top_ratio_sel, left_ratio_sel, diag_ratio_sel = r_sel ** (1*norm_top_vec), r_sel ** (1*norm_left_vec), r_sel ** (1*norm_diag_vec)
-                            if  (( top_sel[[dim_l, dim_h]] *  top_ratio_sel)>=min_sel).all() and (( top_sel[[dim_l, dim_h]] *  top_ratio_sel)<=max_sel).all() \
-                            and ((diag_sel[[dim_l, dim_h]] * diag_ratio_sel)>=min_sel).all() and ((diag_sel[[dim_l, dim_h]] * diag_ratio_sel)<=max_sel).all():
-                                if ((left_sel[[dim_l, dim_h]] * left_ratio_sel)>=min_sel).all() and ((left_sel[[dim_l, dim_h]] * left_ratio_sel)<=max_sel).all():
-                                    left_sel[[dim_l, dim_h]] = left_sel[[dim_l, dim_h]]*left_ratio_sel
-                                else:  # To prevent crossing left boundary of ESS
-                                    if ((left_sel[[dim_l, dim_h]]+r_sel**np.array([0.0, -1.0]))>=min_sel).all() and ((left_sel[[dim_l, dim_h]]+r_sel**np.array([0.0, -1.0]))<=max_sel).all():
-                                        left_sel[[dim_l, dim_h]] = left_sel[[dim_l, dim_h]]+r_sel**np.array([0.0, -1.0])
-                                    else:
-                                        break
-                                top_sel[[dim_l, dim_h]], diag_sel[[dim_l, dim_h]] = top_sel[[dim_l, dim_h]]*top_diff_sel, diag_sel[[dim_l, dim_h]]*diag_diff_sel
-                            else:
-                                break # Simple termination, if rotation failed, we are
-
-                        (top_cost_val, top_plan_xml), (left_cost_val, left_plan_xml), (diag_cost_val, diag_plan_xml) = self.get_cost_and_plan(top_sel, plan_id=None, scale=scale), self.get_cost_and_plan(left_sel, plan_id=None, scale=scale), self.get_cost_and_plan(diag_sel, plan_id=None, scale=scale)
-
+                        (top_end, top_sel), (left_end, left_sel), (bottom_end, bottom_sel), (right_end, right_sel)  =  boundary_constraint(cur_sel, top_sel,  (dim_l, dim_h)), boundary_constraint(cur_sel, left_sel,  (dim_l, dim_h)), boundary_constraint(cur_sel, bottom_sel,  (dim_l, dim_h)), boundary_constraint(cur_sel, right_sel,  (dim_l, dim_h))
+                        
+                        init_intervals = [  ((left_end, left_sel), (bottom_end, bottom_sel)), ((bottom_end, bottom_sel), (right_end, right_sel)), ((right_end, right_sel), (top_end, top_sel)) ]
+                        viable_intervals = []
+                        for (start_end, start_sel), (end_end, end_sel) in init_intervals:
+                            if not (start_end or end_end):
+                                viable_intervals.append( (start_sel, end_sel) )
+                        if not viable_intervals:
+                            break # Break search as rotation based correction is not possible now, due to lack on any side to rotate with unit length
+                        # Costing Viable intervals and check if contour_cost lies in any interval
+                        viable_sel_cost_plan = []
+                        for start_sel, end_sel in viable_intervals:
+                            (start_cost_val, start_plan_xml), (end_cost_val, end_plan_xml) = self.get_cost_and_plan(start_sel, plan_id=None, scale=scale), self.get_cost_and_plan(end_sel, plan_id=None, scale=scale)
+                            start_plan_id, end_plan_id = self.store_plan( start_plan_xml ), self.store_plan( end_plan_xml )
+                            if () or ():
+                                break
+                        else: # if contour_cost does not lie in either of interval, then take maximum or minimum cost step depending of prev_cost_val
+                            pass
+                            continue
+                        # If an interval is selected within for loop, make Binary search for finding correction direction
                         # CHECKPOINT, Deciding which interval to continur search into for next direction, dir_vec will be updated here
                         # 2 point interpolation search (Instead of Exponential rotation, led to faster convergence using FPC
                         # Use optimizer calls only when plans on both end are not same, else use FPC module
-                        next_plan_id = self.store_plan( plan_xml )
-
                         while True:
                             norm_start_vec, norm_end_vec = start_vec/np.linalg.norm(start_vec,1), end_vec/np.linalg.norm(end_vec,1)
                             if np.linalg.norm((norm_start_vec-norm_end_vec),1) <= 0.035: # Approximatle sin(2 degree)
