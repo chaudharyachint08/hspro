@@ -37,11 +37,9 @@ def ada_exploration(org_seed, total_dim, progression=progression):
         d_sel =               (max_sel-min_sel) / (len(self.sel_range_p_inc)-1)
     elif progression=='GP':
         r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_p_inc)-1) )
-
     org_seed = np.array(org_seed)
     prev_cost_val, plan_xml = self.get_cost_and_plan(org_seed, plan_id=None, scale=scale)
     prev_plan_id = self.store_plan( plan_xml )
-
     if total_dim >= 1 :
         dim_h = total_dim-1
         cur_sel, exploration_thread_ls = np.copy(org_seed), [] # index to selectivity, as build_sel is not needed
@@ -262,7 +260,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                             dir_vec = np.log( mid_sel[[dim_l, dim_h]]/cur_sel[[dim_l, dim_h]] )
                         dir_vec = dir_vec / np.linalg(dir_vec,1)
 
-
             # First search include both ends of 2D exploration, rest will not include first end
             if dim_l+1 != dim_h:
                 del seed_sel_ls[0]
@@ -281,7 +278,9 @@ def ada_exploration(org_seed, total_dim, progression=progression):
             # Launching construction of all Ico-cost contours
             for d2_explore_thread in d2_exploration_thread_ls:
                 d2_explore_thread.start()
+                # JOIN of thread here, will make it a sequential approach indeed # 1 Thread needed
+            # If JOIN is done here on threading, number of thread exceed will be less, Res**2 Threads needed
         # Waiting for construction of all Ico-cost contours
-        for explore_thread in exploration_thread_ls:
+        for explore_thread in exploration_thread_ls: # Res**(Dim-1) Threads Needed
             explore_thread.join()
     # print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
