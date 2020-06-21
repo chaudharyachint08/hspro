@@ -1,0 +1,6 @@
+d_date_sk = ss_sold_date_sk | +1
+i_item_sk = ss_item_sk | +1
+s_store_sk = ss_store_sk | +1
+
+# s_state in ('TN','TN','TN','TN','TN','TN','TN','TN') | +1
+# d_year = 2001 | +1
