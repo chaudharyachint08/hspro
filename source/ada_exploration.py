@@ -27,8 +27,6 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
         print(y_val_at_max_x, y_val_at_min_x)
         print(x_val_at_max_y, x_val_at_min_y)
         raise Exception(str(err))
-
-
     return True, next_sel
     # Below code in unreachable for future use
     next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
