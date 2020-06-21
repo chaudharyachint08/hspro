@@ -1334,10 +1334,10 @@ class ScaleVariablePlanBouquet:
         # sns.swarmplot(  x='Contour Index', y='Cost Deviation', data=df, color='.25' )
         plt.grid(True, which='both')
         plt.ylim(0.0,None)
-        plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('E-Nexus' if adaexplore else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+        plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('AdaNexus' if adaexplore else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
         os_lock.acquire()
-        plt.savefig( os.path.join( self.plots_dir, '{} Cost Deviation of {} {} {}GB.PNG'.format(progression,('E-Nexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
-        with open( os.path.join( self.plots_dir, '{} Simulation Results of {} {} {}GB.TXT'.format(progression,('E-Nexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) ,'w') as f:
+        plt.savefig( os.path.join( self.plots_dir, '{} Cost Deviation of {} {} {}GB.PNG'.format(progression,('AdaNexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
+        with open( os.path.join( self.plots_dir, '{} Simulation Results of {} {} {}GB.TXT'.format(progression,('AdaNexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) ,'w') as f:
             f.write( str(self.simulation_result) )
         os_lock.release()
         plt.clf() ; plt.close()
