@@ -1,6 +1,0 @@
-i_item_sk = cs_item_sk | +1
-w_warehouse_sk = cs_warehouse_sk | +1
-d_date_sk = cs_sold_date_sk | +1
-
-# i_current_price between 0.99 and 1.49 | +1
-# d_date between (cast ('2001-01-17' as date)) and (cast ('2001-03-17' as date)) | +1

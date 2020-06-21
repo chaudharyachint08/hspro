@@ -119,7 +119,6 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         break # orth_vec is in correct direction
                     else:
                         orth_vec *= -1.0
-
                 if (not corr_condition) and (not ((contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)))):
                     if step_size>1:
                         step_size /= 2
@@ -263,12 +262,12 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         # Use optimizer calls only when plans on both end are not same, else use FPC module
                         while True:
                             if   progression=='AP':
-                                if np.linalg.norm(      (norm_start_vec-norm_end_vec),1) <=        0.035*d_sel: # Approximatle sin(2 degree precision)
+                                if np.linalg.norm(      (start_sel-end_sel),1) <=        0.035*d_sel: # Approximatle sin(2 degree precision)
                                     break
                                 else:
                                     mid_sel = (start_sel+end_sel)/2
                             elif progression=='GP':
-                                if np.linalg.norm(np.log(norm_start_vec/norm_end_vec),1) <= np.log(0.035*r_sel): # Approximatle sin(2 degree precision)
+                                if np.linalg.norm(np.log(start_sel/end_sel),1) <= np.log(0.035*r_sel): # Approximatle sin(2 degree precision)
                                     break
                                 else:
                                     mid_sel = (start_sel*end_sel)**0.5

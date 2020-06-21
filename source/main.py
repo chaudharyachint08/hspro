@@ -882,8 +882,6 @@ class ScaleVariablePlanBouquet:
                     print(y_val_at_max_x, y_val_at_min_x)
                     print(x_val_at_max_y, x_val_at_min_y)
                     raise Exception(str(err))
-
-
                 return True, next_sel
                 # Below code in unreachable for future use
                 next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -913,8 +911,7 @@ class ScaleVariablePlanBouquet:
                         # 2D exploration using initial seed
                         seed_sel_ls.append( tuple(cur_sel) ) # index to selectivity, as build_sel is not needed
                         step_size, dir_vec = 1, np.array([0.0, -1.0]) # [X, Y] is used for direction vector
-
-                        while True:
+                        while True: # Search of next and next points on contour
                             # Finding point with 'd' vector
                             next_sel = np.copy(cur_sel)
                             norm_dir_vec = dir_vec/np.linalg.norm(dir_vec,1)
@@ -989,12 +986,12 @@ class ScaleVariablePlanBouquet:
                                     slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
                                     desired_sel = next_sel + (contour_cost-next_cost_val)/slope
                                     if progression=='AP':
-                                        corr_vec =        desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]
+                                        corr_vec =       (desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]) / d_sel
                                     elif progression=='GP':
-                                        corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]])
+                                        corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]]) / np.log(r_sel)
                                     # Finding 'g' vector, better direction finding
                                     grad_vec = step_size*norm_dir_vec + corr_vec
-                                else:
+                                else: # if N is within interval and o is not possible go with N only
                                     grad_vec = step_size*norm_dir_vec + 0.0 # No correction is required
 
                             # Finding point with 'g' vector
@@ -1120,12 +1117,12 @@ class ScaleVariablePlanBouquet:
                                     # Use optimizer calls only when plans on both end are not same, else use FPC module
                                     while True:
                                         if   progression=='AP':
-                                            if np.linalg.norm(      (norm_start_vec-norm_end_vec),1) <=        0.035*d_sel: # Approximatle sin(2 degree precision)
+                                            if np.linalg.norm(      (start_sel-end_sel),1) <=        0.035*d_sel: # Approximatle sin(2 degree precision)
                                                 break
                                             else:
                                                 mid_sel = (start_sel+end_sel)/2
                                         elif progression=='GP':
-                                            if np.linalg.norm(np.log(norm_start_vec/norm_end_vec),1) <= np.log(0.035*r_sel): # Approximatle sin(2 degree precision)
+                                            if np.linalg.norm(np.log(start_sel/end_sel),1) <= np.log(0.035*r_sel): # Approximatle sin(2 degree precision)
                                                 break
                                             else:
                                                 mid_sel = (start_sel*end_sel)**0.5
@@ -1172,6 +1169,7 @@ class ScaleVariablePlanBouquet:
                     for explore_thread in exploration_thread_ls: # Res**(Dim-1) Threads Needed
                         explore_thread.join()
                 print('Entered AdaEexploration',IC_id,len(inspect.stack(0)),threading.current_thread())
+
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
             if not adaexplore:
