@@ -56,8 +56,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
             # 2D exploration using initial seed
             seed_sel_ls.append( tuple(cur_sel) ) # index to selectivity, as build_sel is not needed
             step_size, dir_vec = 1, np.array([0.0, -1.0]) # [X, Y] is used for direction vector
-
-            while True:
+            while True: # Search of next and next points on contour
                 # Finding point with 'd' vector
                 next_sel = np.copy(cur_sel)
                 norm_dir_vec = dir_vec/np.linalg.norm(dir_vec,1)
@@ -120,6 +119,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         break # orth_vec is in correct direction
                     else:
                         orth_vec *= -1.0
+
                 if (not corr_condition) and (not ((contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)))):
                     if step_size>1:
                         step_size /= 2
@@ -132,12 +132,12 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
                         desired_sel = next_sel + (contour_cost-next_cost_val)/slope
                         if progression=='AP':
-                            corr_vec =        desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]
+                            corr_vec =       (desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]) / d_sel
                         elif progression=='GP':
-                            corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]])
+                            corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]]) / np.log(r_sel)
                         # Finding 'g' vector, better direction finding
                         grad_vec = step_size*norm_dir_vec + corr_vec
-                    else:
+                    else: # if N is within interval and o is not possible go with N only
                         grad_vec = step_size*norm_dir_vec + 0.0 # No correction is required
 
                 # Finding point with 'g' vector
