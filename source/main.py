@@ -212,6 +212,7 @@ def my_listdir(dir_path='.'):
     else:
         error = False
     finally:
+        pass
         os_lock.release()
     if error:
         raise FileNotFoundError(error_msg)
@@ -412,13 +413,11 @@ class ScaleVariablePlanBouquet:
                 os.makedirs( xml_plan_path , exist_ok=True )
             if not os.path.isdir(json_plan_path):
                 os.makedirs( json_plan_path, exist_ok=True )
-            os_lock.acquire()
             plan_id, json_obj = len(my_listdir(xml_plan_path)), pf.xml2json(xml_string,mode='string')
             with my_open( os.path.join(xml_plan_path,'{}.xml'.format(plan_id)) ,'w') as f:
                 f.write( xml_string )
             self.save_dict(json_obj, os.path.join(json_plan_path,'{}.json'.format(plan_id)) )
             self.p2f_m[plan_id], self.f2r_m[plan_id], self.r2p_m[plan_serial] = plan_id, plan_serial, plan_id
-            os_lock.release()
         return self.r2p_m[plan_serial]
 
     ######## PERFORMANCE METRICS METHODS ########
@@ -493,7 +492,7 @@ class ScaleVariablePlanBouquet:
 
     def save_points(self,IC_id,anorexic_lambda,plan_id,scale):
         "Save selectivity points onto disk, cobining with previous points, and clears memory"
-        # print('save_points', (IC_id,anorexic_lambda,plan_id,scale))
+        print('save_points', (IC_id,anorexic_lambda,plan_id,scale))
         if os.path.isfile( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) ):
             prev_val = self.load_obj( os.path.join( self.maps_dir, str((IC_id,anorexic_lambda,plan_id,scale))  ) )
         else:
@@ -749,6 +748,7 @@ class ScaleVariablePlanBouquet:
             print('END>')
             # Repeated Exponential search to find leftmost point inside [C,(1+α)C]
             v_ix = m_ix
+            print('Exponential Search for Better Seed <Begin,', end='')
             while True:
                 continue_exp, exp_step = False, 1
                 while v_ix >= exp_step:
@@ -764,15 +764,17 @@ class ScaleVariablePlanBouquet:
                         break
                 if not continue_exp:
                     break
+            # print('os_lock', end='')
             self.obj_lock.acquire()
             try:
                 self.deviation_dict[IC_id].append(exp_cost/self.id2c_m[(IC_id,scale)])
             except:
                 self.deviation_dict[IC_id].append(mid_cost/self.id2c_m[(IC_id,scale)])
             self.obj_lock.release()
-            print('Exponential Search for Better Seed complete')
+            print('END>')
             # Initial seed value, which will explore into D-dimensional surface
             initial_seed_ix  = ( (0,)*s + (v_ix,) + (self.resolution_p-1,)*t )
+            print(initial_seed_ix)
             initial_seed_sel = self.build_sel(initial_seed_ix)
             initial_seed_plan_id = self.store_plan( self.plan(initial_seed_sel, scale=scale) )
             # Lock & local data-structures of outer function to be used
@@ -872,7 +874,16 @@ class ScaleVariablePlanBouquet:
                     y,x = max_sel, x_val_at_max_y
                 elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel: # y = min_sel, limit constaint on x (bottom boundary)
                     y,x = min_sel, x_val_at_min_y
-                next_sel[list(dim_tuple)] = [x,y]
+                try:
+                    next_sel[list(dim_tuple)] = [x,y]
+                except Exception as err:
+                    print(min_sel, max_sel)
+                    print(cur_sel, next_sel, np.linalg.norm(cur_sel-next_sel,1))
+                    print(y_val_at_max_x, y_val_at_min_x)
+                    print(x_val_at_max_y, x_val_at_min_y)
+                    raise Exception(str(err))
+
+
                 return True, next_sel
                 # Below code in unreachable for future use
                 next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -910,10 +921,18 @@ class ScaleVariablePlanBouquet:
                             # Ahead movement based on d (direction vector)
                             if progression=='AP':
                                 diff_sel  = d_sel *  (step_size*norm_dir_vec)
+                                if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                    print('N vector')
+                                    print(d_sel, step_size, norm_dir_vec)
+                                    print(diff_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                                 next_sel[[dim_l, dim_h]]+=diff_sel
                                 end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                             elif progression=='GP':
                                 ratio_sel = r_sel ** (step_size*norm_dir_vec)
+                                if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                    print('N vector')
+                                    print(r_sel, step_size, norm_dir_vec)
+                                    print(ratio_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                                 next_sel[[dim_l, dim_h]]*=ratio_sel
                                 end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                             next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -928,7 +947,11 @@ class ScaleVariablePlanBouquet:
                                 # Ahead movement based on c (direction vector)
                                 if progression=='AP':
                                     diff_sel  = d_sel *  (1*norm_orth_vec)
-                                    orth_sel[[dim_l, dim_h]]+=diff_sel
+                                    if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                        print('O vector')
+                                        print(d_sel, step_size, norm_orth_vec)
+                                        print(diff_sel.dtype, orth_sel[[dim_l, dim_h]].dtype)
+                                        orth_sel[[dim_l, dim_h]]+=diff_sel
                                     end_point, orth_sel = boundary_constraint(next_sel, orth_sel,  (dim_l, dim_h))
                                     if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                                         loop_count-=1
@@ -936,6 +959,10 @@ class ScaleVariablePlanBouquet:
                                         continue
                                 elif progression=='GP':
                                     ratio_sel = r_sel ** (1*norm_orth_vec)
+                                    if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                        print('O vector')
+                                        print(r_sel, step_size, norm_orth_vec)
+                                        print(ratio_sel.dtype, orth_sel[[dim_l, dim_h]].dtype)
                                     orth_sel[[dim_l, dim_h]]*=ratio_sel
                                     end_point, orth_sel = boundary_constraint(next_sel, orth_sel, (dim_l, dim_h))
                                     if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
@@ -962,9 +989,9 @@ class ScaleVariablePlanBouquet:
                                     slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
                                     desired_sel = next_sel + (contour_cost-next_cost_val)/slope
                                     if progression=='AP':
-                                        corr_vec =        desired_sel - next_sel
+                                        corr_vec =        desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]
                                     elif progression=='GP':
-                                        corr_vec = np.log(desired_sel / next_sel)
+                                        corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]])
                                     # Finding 'g' vector, better direction finding
                                     grad_vec = step_size*norm_dir_vec + corr_vec
                                 else:
@@ -976,10 +1003,18 @@ class ScaleVariablePlanBouquet:
                             # Ahead movement based on g (gradient vector)
                             if progression=='AP':
                                 diff_sel = d_sel *  (step_size*norm_grad_vec)
+                                if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                    print('G vector')
+                                    print(d_sel, step_size, norm_dir_vec)
+                                    print(diff_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                                 next_sel[[dim_l, dim_h]]+=diff_sel
                                 end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                             elif progression=='GP':
                                 ratio_sel = r_sel ** (step_size*norm_grad_vec)
+                                if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                                    print('G vector')
+                                    print(r_sel, step_size, norm_dir_vec)
+                                    print(ratio_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                                 next_sel[[dim_l, dim_h]]*=ratio_sel
                                 end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                             next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -1142,7 +1177,7 @@ class ScaleVariablePlanBouquet:
             if not adaexplore:
                 exploration( initial_seed_ix, self.Dim )
             else:
-                ada_exploration( build_sel(initial_seed_ix), self.Dim, progression=progression )
+                ada_exploration( self.build_sel(initial_seed_ix), self.Dim, progression=progression )
             # Merging to Object Data-structures after exploration is complete
             self.obj_lock.acquire()
             self.iad2p_m .update(iad2p_m )
@@ -1205,14 +1240,23 @@ class ScaleVariablePlanBouquet:
         # Launching construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
+                print('Starting Contour Discovery on', IC_indices[ix])
                 nexus_thread.start()
-                # nexus_thread.join()
-                # self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
+                nexus_thread.join()
+                self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
+                print('Completed Contour Discovery on', IC_indices[ix])
+
         # Waiting for construction of all Ico-cost contours
         for ix, nexus_thread in enumerate(nexus_thread_ls):
             if not self.exec_specific[scale]['nexus'][IC_indices[ix]]:
-                nexus_thread.join()
-                self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
+                pass
+                # nexus_thread.join()
+                # self.exec_specific[scale]['nexus'][IC_indices[ix]] = True
+                # print('Completed Contour Discovery on', IC_indices[ix])
+
+        print('All Contours Discovered')
+
+
         # CSI algorithm, for further reducing effective plan density on each contour
         if covering:
             self.covering_sequence(scale=scale)
@@ -1292,13 +1336,11 @@ class ScaleVariablePlanBouquet:
         # sns.swarmplot(  x='Contour Index', y='Cost Deviation', data=df, color='.25' )
         plt.grid(True, which='both')
         plt.ylim(0.0,None)
-        plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('E-Nexus' if enexus else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
+        plt.title( ' '.join((   r'$Cost$',r'$Deviation$',r'$of$', r'${}$'.format(('E-Nexus' if adaexplore else 'Nexus')) , r'$%s$ '%(self.benchmark) , r'$%sGB$ '%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
         os_lock.acquire()
-        plt.savefig( os.path.join( self.plots_dir, '{} Cost Deviation of {} {} {}GB.PNG'.format(progression,('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
-
-        with open( os.path.join( self.plots_dir, '{} Simulation Results of {} {} {}GB.TXT'.format(progression,('E-Nexus' if enexus else 'Nexus'), self.benchmark, scale) ) ,'w') as f:
+        plt.savefig( os.path.join( self.plots_dir, '{} Cost Deviation of {} {} {}GB.PNG'.format(progression,('E-Nexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
+        with open( os.path.join( self.plots_dir, '{} Simulation Results of {} {} {}GB.TXT'.format(progression,('E-Nexus' if adaexplore else 'Nexus'), self.benchmark, scale) ) ,'w') as f:
             f.write( str(self.simulation_result) )
-
         os_lock.release()
         plt.clf() ; plt.close()
         # return # Return only by plotting deviation maps, for testing purpose
@@ -1353,7 +1395,7 @@ class ScaleVariablePlanBouquet:
                 plt.grid(True, which='both')
                 # ax.set_xscale('log') ; # ax.set_yscale('log')
                 os_lock.acquire()
-                plt.savefig( os.path.join( self.plots_dir, '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                plt.savefig( os.path.join( self.plots_dir, '1D-ESS {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
                 os_lock.release()
                 # plt.show()
             elif self.Dim == 2:
@@ -1400,7 +1442,7 @@ class ScaleVariablePlanBouquet:
                     # ax.set_ylabel( '\n'.join(('Selectivity',self.epp[1])) )
                     # ax.set_zlabel( 'Cost' )
                     # plt.title( ' '.join((   r'$Contour$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
-                    # plt.savefig( os.path.join( self.plots_dir, '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    # plt.savefig( os.path.join( self.plots_dir, '2D-ESS Cost Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
                     # plt.show()
                     plt.close() ; plt.clf()
 
@@ -1424,7 +1466,7 @@ class ScaleVariablePlanBouquet:
                     plt.title( ' '.join((   r'$Plan$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                     plt.grid(True, which='both')
                     os_lock.acquire()
-                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Plan Diagram {}GB {}.PNG'.format(scale, ('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
                     os_lock.release()
                     # plt.show()
                 else:
@@ -1469,7 +1511,7 @@ class ScaleVariablePlanBouquet:
                     plt.title( ' '.join((   r'$Contour$' , r'$Diagram$' , r'$%s$'%(self.benchmark) , r'$\lambda={%s}$'%(str(self.anorexic_lambda)) , r'$%sGB$'%(str(scale)) , r'$Q_{%s}$'%(self.query_id)   )) )
                     plt.grid(True, which='both')
                     os_lock.acquire()
-                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Contours Diagram {}GB {} {}.PNG'.format(scale, self.anorexic_lambda,('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=600 , bbox_inches='tight' )
+                    plt.savefig( os.path.join( self.plots_dir, '2D-ESS Contours Diagram {}GB {} {}.PNG'.format(scale, self.anorexic_lambda,('posp' if do_posp else 'regular')) ) , format='PNG' , dpi=400 , bbox_inches='tight' )
                     os_lock.release()
                     # plt.show()
             elif self.Dim == 3:

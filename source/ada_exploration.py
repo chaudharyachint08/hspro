@@ -19,7 +19,16 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
         y,x = max_sel, x_val_at_max_y
     elif min_sel<=x_val_at_min_y and x_val_at_min_y<=max_sel: # y = min_sel, limit constaint on x (bottom boundary)
         y,x = min_sel, x_val_at_min_y
-    next_sel[list(dim_tuple)] = [x,y]
+    try:
+        next_sel[list(dim_tuple)] = [x,y]
+    except Exception as err:
+        print(min_sel, max_sel)
+        print(cur_sel, next_sel, np.linalg.norm(cur_sel-next_sel,1))
+        print(y_val_at_max_x, y_val_at_min_x)
+        print(x_val_at_max_y, x_val_at_min_y)
+        raise Exception(str(err))
+
+
     return True, next_sel
     # Below code in unreachable for future use
     next_cost_val, _ = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -31,7 +40,7 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
 def ada_exploration(org_seed, total_dim, progression=progression):
     "Nested function for exploration using seed and contour generation"
     nonlocal IC_id, contour_cost, scale, iad2p_m, iapd2s_m, nexus_lock, wasted_optimizer_calls
-    # print('Entered EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+    print('Entered AdaEexploration',IC_id,len(inspect.stack(0)),threading.current_thread())
     min_sel, max_sel = min(self.sel_range_p_inc), max(self.sel_range_p_inc)
     if progression=='AP':
         d_sel =               (max_sel-min_sel) / (len(self.sel_range_p_inc)-1)
@@ -57,10 +66,18 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Ahead movement based on d (direction vector)
                 if progression=='AP':
                     diff_sel  = d_sel *  (step_size*norm_dir_vec)
+                    if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                        print('N vector')
+                        print(d_sel, step_size, norm_dir_vec)
+                        print(diff_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                     next_sel[[dim_l, dim_h]]+=diff_sel
                     end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_dir_vec)
+                    if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                        print('N vector')
+                        print(r_sel, step_size, norm_dir_vec)
+                        print(ratio_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                     next_sel[[dim_l, dim_h]]*=ratio_sel
                     end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -75,7 +92,11 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                     # Ahead movement based on c (direction vector)
                     if progression=='AP':
                         diff_sel  = d_sel *  (1*norm_orth_vec)
-                        orth_sel[[dim_l, dim_h]]+=diff_sel
+                        if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                            print('O vector')
+                            print(d_sel, step_size, norm_orth_vec)
+                            print(diff_sel.dtype, orth_sel[[dim_l, dim_h]].dtype)
+                            orth_sel[[dim_l, dim_h]]+=diff_sel
                         end_point, orth_sel = boundary_constraint(next_sel, orth_sel,  (dim_l, dim_h))
                         if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
                             loop_count-=1
@@ -83,6 +104,10 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                             continue
                     elif progression=='GP':
                         ratio_sel = r_sel ** (1*norm_orth_vec)
+                        if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                            print('O vector')
+                            print(r_sel, step_size, norm_orth_vec)
+                            print(ratio_sel.dtype, orth_sel[[dim_l, dim_h]].dtype)
                         orth_sel[[dim_l, dim_h]]*=ratio_sel
                         end_point, orth_sel = boundary_constraint(next_sel, orth_sel, (dim_l, dim_h))
                         if np.linalg.norm((orth_sel-next_sel),1)<epsilon: # Halt if orth_sel is same as next_sel
@@ -109,9 +134,9 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                         slope = (orth_cost_val-next_cost_val)/(orth_sel-next_sel)
                         desired_sel = next_sel + (contour_cost-next_cost_val)/slope
                         if progression=='AP':
-                            corr_vec =        desired_sel - next_sel
+                            corr_vec =        desired_sel[[dim_l,dim_h]] - next_sel[[dim_l,dim_h]]
                         elif progression=='GP':
-                            corr_vec = np.log(desired_sel / next_sel)
+                            corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]])
                         # Finding 'g' vector, better direction finding
                         grad_vec = step_size*norm_dir_vec + corr_vec
                     else:
@@ -123,10 +148,18 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 # Ahead movement based on g (gradient vector)
                 if progression=='AP':
                     diff_sel = d_sel *  (step_size*norm_grad_vec)
+                    if diff_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                        print('G vector')
+                        print(d_sel, step_size, norm_dir_vec)
+                        print(diff_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                     next_sel[[dim_l, dim_h]]+=diff_sel
                     end_point, next_sel = boundary_constraint(cur_sel, next_sel,  (dim_l, dim_h))
                 elif progression=='GP':
                     ratio_sel = r_sel ** (step_size*norm_grad_vec)
+                    if ratio_sel.dtype!=next_sel[[dim_l, dim_h]].dtype:
+                        print('G vector')
+                        print(r_sel, step_size, norm_dir_vec)
+                        print(ratio_sel.dtype, next_sel[[dim_l, dim_h]].dtype)
                     next_sel[[dim_l, dim_h]]*=ratio_sel
                     end_point, next_sel = boundary_constraint(cur_sel, next_sel, (dim_l, dim_h))
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
@@ -283,4 +316,4 @@ def ada_exploration(org_seed, total_dim, progression=progression):
         # Waiting for construction of all Ico-cost contours
         for explore_thread in exploration_thread_ls: # Res**(Dim-1) Threads Needed
             explore_thread.join()
-    # print('Exiting EXPLORATION',IC_id,len(inspect.stack(0)),threading.current_thread())
+    print('Entered AdaEexploration',IC_id,len(inspect.stack(0)),threading.current_thread())
