@@ -142,8 +142,8 @@ def set_cmd_arguments():
     parser.add_argument("--max_sel"          , type=eval , dest='max_sel'          , default=1.0)    # Maximum sel of 1.0
     parser.add_argument("--anorexic_lambda"  , type=eval , dest='anorexic_lambda'  , default=0.2) # Cost Slack, for ANOREXIC Red. Heuristic
     parser.add_argument("--nexus_tolerance"  , type=eval , dest='nexus_tolerance'  , default=0.05) # for q-points in discretized planes, results in surface thickening
-    parser.add_argument("--bisection_lambda" , type=eval , dest='bisection_lambda' , default=0.2) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
-    parser.add_argument("--ada_momentum"     , type=eval , dest='ada_momentum'     , default=0.5) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
+    parser.add_argument("--bisection_lambda" , type=eval , dest='bisection_lambda' , default=0.1) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
+    parser.add_argument("--ada_momentum"     , type=eval , dest='ada_momentum'     , default=0.8) # Reducing Bisection searches with Anorexic swallowing in ada_exploration
 
     # String Type Arguments
     parser.add_argument("--progression" , type=str  , dest='progression' , default='GP')
@@ -1316,6 +1316,9 @@ class ScaleVariablePlanBouquet:
         if MH is not None:
             print('MH',MH)
 
+    def smooth_deviation(self):
+        pass
+
     def plot_contours(self, do_posp=False, scale=None):
         "Plotting iso-cost contours up to 3 dimensions"
         print('Entered PLOTTING')
@@ -1325,6 +1328,8 @@ class ScaleVariablePlanBouquet:
         for IC_ix in self.deviation_dict:
             self.deviation_dict[IC_ix] = np.array(self.deviation_dict[IC_ix])
             self.deviation_dict[IC_ix] = np.maximum( self.deviation_dict[IC_ix] , 1/self.deviation_dict[IC_ix] )-1
+        if adaexplore:
+            self.smooth_deviation()
         IC_ix_ls        = [ IC_ix      for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         deviation_ix_ls = [ deviation  for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
