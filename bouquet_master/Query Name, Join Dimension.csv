@@ -12,19 +12,10 @@ Index, Query Name, Join Dimensions
 10, 8D_DS_Q73, 3
 11, 8D_DS_Q84, 5
 12, 8D_DS_Q96, 3
-13, 9D_DS_Q19, 5 <---[This will be executed for both AP & GP in Isolation]]
+13, 9D_DS_Q19, 5
 14, 9D_DS_Q7, 4
 15, 10D_DS_Q26, 4
 16, 10D_DS_Q27, 4
 17, 11D_DS_Q91, 6
 18, 12D_DS_Q18, 6
 19, 15D_DS_Q36, 10
-
-
-6 ka AP rkhna h next
-
-All 3D queries done
-2 4D Queries under execution
-
-
-14,15,16 are next 3 4-dimensional queries to run experiment upon
