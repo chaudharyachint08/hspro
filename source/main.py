@@ -991,8 +991,10 @@ class ScaleVariablePlanBouquet:
                                         corr_vec = np.log(desired_sel[[dim_l,dim_h]] / next_sel[[dim_l,dim_h]]) / np.log(r_sel)
                                     # Finding 'g' vector, better direction finding
                                     grad_vec = step_size*norm_dir_vec + corr_vec
+                                    print('Correction')
                                 else: # if N is within interval and o is not possible go with N only
                                     grad_vec = step_size*norm_dir_vec + 0.0 # No correction is required
+                                    print('Already Inside')
 
                             # Finding point with 'g' vector
                             next_sel = np.copy(cur_sel)
@@ -1021,7 +1023,7 @@ class ScaleVariablePlanBouquet:
                                 dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
                                 # BisectionAPD code here with Simulating Recursion
                                 sim_stck = [ ((cur_sel, prev_plan_id, prev_cost_val),(next_sel, next_plan_id, next_cost_val)), ]
-                                while sim_stck:
+                                while False and sim_stck:
                                     (sel_l, plan_id_l, cost_val_l), (sel_r, plan_id_r, cost_val_r) = sim_stck.pop()
                                     if progression=='AP':
                                         proxim_srch_flg = True if ( np.linalg.norm(      (sel_l-sel_r),1) > d_sel         ) else False
@@ -1063,6 +1065,7 @@ class ScaleVariablePlanBouquet:
                                 if step_size>1:
                                     step_size /= 2 # Decreasing Step size by 2
                                 else:
+                                    break
                                     # Exponential rotation algorithm for finding direction in case of failed tuning with minimum step size
                                     # 4 point initialization of search interval (1,3,4 Quarter from cur_sel amenable to search)
                                     top_vec, left_vec, bottom_vec, right_vec = np.array([0.0,1.0]), np.array([-1.0,0.0]), np.array([0.0,-1.0]), np.array([1.0,0.0])
