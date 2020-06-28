@@ -28,18 +28,15 @@ proxy_sr = {	'EOC': {},
 
 import numpy as np
 
+
 C, r_ratio = 1, 2
 prev_min_cost, prev_total_cost = C/r_ratio, 0
 
-def smooth_deviation(self):
-	if typ=='GP' and AdaNexus:
-		for IC_id in self.deviation_dict:
-			
 
 def CCM(EOC, WOC, dim):
 	alpha = WOC/EOC
 	gamma = 4*alpha*(1-alpha)
-	if typ=='AP':
+	if progression=='AP':
 		gamma = 1-gamma
 		val_EOC = ( (EOC**(1/dim))**(gamma*(1/dim**0.5)) * (np.log(EOC**(1/dim))/np.log(2)+1)**  (1-gamma*(1/dim**2)) )**dim
 		val_WOC = ( (WOC**(1/dim))**(gamma*(1/dim**0.5)) * (np.log(WOC**(1/dim)+1)/np.log(2)+1)**(1-gamma*(1/dim**2)) )**dim
@@ -52,9 +49,21 @@ def CCM(EOC, WOC, dim):
 	return alpha, gamma,  val_EOC, val_WOC
 
 def smooth(self):
+	if adaexplore:
+		convex_val = np.linspace(0.0,1.0, len(list(simulation_result['Essential_Optimizer_calls'].keys())))
+		for IC_id in self.deviation_dict:
+			old_max_dev = r_sel**2-1
+			new_max_dev = r_sel**1-1
+			conv_temp = convex_val*np.random.random()
+			new_dev_ls  = (1-conv_temp)*abs(np.random.randn(len(self.deviation_dict[IC_id])))+(conv_temp)*np.random.random(len(self.deviation_dict[IC_id]))
+			new_dev_ls  = (new_dev_ls-new_dev_ls.min())/(new_dev_ls.max()-new_dev_ls.min())
+			max_dev     = self.deviation_dict[IC_id].max()
+			self.deviation_dict[IC_id] = (self.deviation_dict[IC_id]-self.deviation_dict[IC_id].min())/(self.deviation_dict[IC_id].max()-self.deviation_dict[IC_id].min())
+			self.deviation_dict[IC_id] =  = max_dev*(new_max_dev/old_max_dev)*((self.deviation_dict[IC_id]+new_dev_ls)/2)
 
 	for IC_id in list(simulation_result['Essential_Optimizer_calls'].keys()):
-		deviation_dict[IC_id] = np.array([0.5,])
+		# Update Deviation Dictionary here
+		# Correcting EOC & WOC accordingly
 		EOC, WOC = simulation_result['Essential_Optimizer_calls'][IC_id], simulation_result['Wasted_Optimizer_calls'][IC_id]
 		FPC = simulation_result['FPC_calls'][IC_id]
 		CPC = 1 + FPC/EOC # Contour Plan Cardinality
@@ -63,7 +72,6 @@ def smooth(self):
 		ccm = CCM(EOC, WOC, dim)
 		print( *ccm, EOC, WOC )
 		# CCM = WOC/EOC # Contour Complexity Measure, 0 mean straight line in one dimension only, 1 means curved in all dimensions
-
 		proxy_sr['EOC'][IC_id], proxy_sr['WOC'][IC_id], proxy_sr['CPC'][IC_id], proxy_sr['FPC'][IC_id],  = EOC, WOC, CPC, FPC
 
 		IC_cost = C*r_ratio**IC_id
@@ -87,3 +95,37 @@ def smooth(self):
 	proxy_sr['MSO_e_Thry'] =   max(proxy_sr['MSO_k_Thry'].values())
 	proxy_sr['MSO_e_Real'] =   max(proxy_sr['MSO_k_Real'].values())
 	proxy_sr['MSO_g']      = 4*max(proxy_sr['CPC'       ].values())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+        if adaexplore:
+            r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_o_inc)-1) )
+            convex_val = np.linspace(0.0,1.0, len(self.deviation_dict))
+            for IC_id in self.deviation_dict:
+                old_max_dev = r_sel**2-1
+                new_max_dev = r_sel**1-1
+                conv_temp   = convex_val[IC_id]*np.random.random()
+                new_dev_ls  = (1-conv_temp)*abs(np.random.randn(len(self.deviation_dict[IC_id])))+(conv_temp)*np.random.random(len(self.deviation_dict[IC_id]))
+                new_dev_ls  = (new_dev_ls-new_dev_ls.min())/(new_dev_ls.max()-new_dev_ls.min())
+                max_dev     = self.deviation_dict[IC_id].max()
+                self.deviation_dict[IC_id] = (self.deviation_dict[IC_id]-self.deviation_dict[IC_id].min())/(self.deviation_dict[IC_id].max()-self.deviation_dict[IC_id].min())
+                self.deviation_dict[IC_id] =  max_dev*(new_max_dev/old_max_dev)*((self.deviation_dict[IC_id]+new_dev_ls)/2)
+
+'''

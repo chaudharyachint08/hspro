@@ -1175,7 +1175,7 @@ class ScaleVariablePlanBouquet:
 
 
             # Calling generic exploration part of NEXUS algorithm, if EPP has two or more dim, search will continue
-            if not adaexplore:
+            if True or (not adaexplore):
                 exploration( initial_seed_ix, self.Dim )
             else:
                 ada_exploration( self.build_sel(initial_seed_ix), self.Dim, progression=progression )
@@ -1331,8 +1331,6 @@ class ScaleVariablePlanBouquet:
         for IC_ix in self.deviation_dict:
             self.deviation_dict[IC_ix] = np.array(self.deviation_dict[IC_ix])
             self.deviation_dict[IC_ix] = np.maximum( self.deviation_dict[IC_ix] , 1/self.deviation_dict[IC_ix] )-1
-        if adaexplore:
-            self.smooth_deviation()
         IC_ix_ls        = [ IC_ix      for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         deviation_ix_ls = [ deviation  for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
