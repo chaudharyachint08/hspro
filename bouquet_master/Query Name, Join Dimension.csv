@@ -4,18 +4,21 @@ Index, Query Name, Join Dimensions
 2, 5D_DS_Q21, 3
 3, 5D_DS_Q37, 3
 4, 5D_DS_Q40, 3
-5, 5D_DS_Q62, 4
-6, 5D_DS_Q99, 4
 7, 6D_DS_Q15, 3
 8, 6D_DS_Q89, 3
 9, 7D_DS_Q53, 3
 10, 8D_DS_Q73, 3
-11, 8D_DS_Q84, 5
 12, 8D_DS_Q96, 3
-13, 9D_DS_Q19, 5
-14, 9D_DS_Q7, 4
+
+5, 5D_DS_Q62, 4
+6, 5D_DS_Q99, 4
+14, 9D_DS_Q7, 4 <-- Running this now
 15, 10D_DS_Q26, 4
 16, 10D_DS_Q27, 4
+
+11, 8D_DS_Q84, 5
+13, 9D_DS_Q19, 5
+
 17, 11D_DS_Q91, 6
 18, 12D_DS_Q18, 6
 19, 15D_DS_Q36, 10

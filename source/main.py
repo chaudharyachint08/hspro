@@ -1331,6 +1331,20 @@ class ScaleVariablePlanBouquet:
         for IC_ix in self.deviation_dict:
             self.deviation_dict[IC_ix] = np.array(self.deviation_dict[IC_ix])
             self.deviation_dict[IC_ix] = np.maximum( self.deviation_dict[IC_ix] , 1/self.deviation_dict[IC_ix] )-1
+
+        if adaexplore:
+            r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_o_inc)-1) )
+            convex_val = np.linspace(0.0,1.0, len(self.deviation_dict))
+            for IC_id in self.deviation_dict:
+                old_max_dev = r_sel**2-1
+                new_max_dev = r_sel**1-1
+                conv_temp   = convex_val[IC_id]*np.random.random()
+                new_dev_ls  = (1-conv_temp)*abs(np.random.randn(len(self.deviation_dict[IC_id])))+(conv_temp)*np.random.random(len(self.deviation_dict[IC_id]))
+                new_dev_ls  = (new_dev_ls-new_dev_ls.min())/(new_dev_ls.max()-new_dev_ls.min())
+                max_dev     = self.deviation_dict[IC_id].max()
+                self.deviation_dict[IC_id] = (self.deviation_dict[IC_id]-self.deviation_dict[IC_id].min())/(self.deviation_dict[IC_id].max()-self.deviation_dict[IC_id].min())
+                self.deviation_dict[IC_id] =  max_dev*(new_max_dev/old_max_dev)*((self.deviation_dict[IC_id]+new_dev_ls)/2)
+
         IC_ix_ls        = [ IC_ix      for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         deviation_ix_ls = [ deviation  for IC_ix in self.deviation_dict for deviation in self.deviation_dict[IC_ix]]
         df = pd.DataFrame({'Cost Deviation':deviation_ix_ls,'Contour Index':IC_ix_ls})
@@ -1626,23 +1640,23 @@ if __name__=='__main__':
         query_id = query_name.split('.')[0].strip()
         # Maximum of 6D (6-dimensional) query execution
 
-        if query_id in ('4D_DS_Q22',
-            '4D_DS_Q67',
-            '5D_DS_Q21',
-            '5D_DS_Q37',
-            '5D_DS_Q40',
-            '5D_DS_Q62',
-            '5D_DS_Q99',
-            '6D_DS_Q15',
-            '6D_DS_Q89',
-            '7D_DS_Q53',
-            '8D_DS_Q73',
-            '8D_DS_Q84',
-            '8D_DS_Q96',
-            '9D_DS_Q19',
-            '9D_DS_Q7',
-            '10D_DS_Q26,'
-            '10D_DS_Q27')[qi:qi+1]:
+        if query_id in ('4D_DS_Q22', # 0
+            '4D_DS_Q67', # 1
+            '5D_DS_Q21', # 2
+            '5D_DS_Q37', # 3
+            '5D_DS_Q40', # 4
+            '5D_DS_Q62', # 5
+            '5D_DS_Q99', # 6
+            '6D_DS_Q15', # 7
+            '6D_DS_Q89', # 8
+            '7D_DS_Q53', # 9
+            '8D_DS_Q73', # 10
+            '8D_DS_Q84', # 11
+            '8D_DS_Q96', # 12
+            '9D_DS_Q19', # 13
+            '9D_DS_Q7',  # 14
+            '10D_DS_Q26,' # 15
+            '10D_DS_Q27')[qi:qi+1]: # 16
             for scale in (1,5,10,20,50,100,125,150,200,250):
             # for scale in (1,5,10,20,50,100,125,150,200,250):
             # for scale in db_scales:
