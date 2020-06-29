@@ -12,9 +12,9 @@ Index, Query Name, Join Dimensions
 
 5, 5D_DS_Q62, 4
 6, 5D_DS_Q99, 4
-14, 9D_DS_Q7, 4 <-- Running this now
+14, 9D_DS_Q7, 4
 15, 10D_DS_Q26, 4
-16, 10D_DS_Q27, 4
+16, 10D_DS_Q27, 4 <-- Running this now
 
 11, 8D_DS_Q84, 5
 13, 9D_DS_Q19, 5

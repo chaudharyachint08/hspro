@@ -165,7 +165,7 @@ def ada_exploration(org_seed, total_dim, progression=progression):
                 next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                 next_plan_id = self.store_plan( plan_xml )
                 if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
-                    grad_impact = (1-ada_momentum**step_size)
+                    grad_impact = (1-(1-ada_momentum)**step_size)
                     dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
                     # BisectionAPD code here with Simulating Recursion
                     sim_stck = [ ((cur_sel, prev_plan_id, prev_cost_val),(next_sel, next_plan_id, next_cost_val)), ]

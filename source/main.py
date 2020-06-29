@@ -899,7 +899,7 @@ class ScaleVariablePlanBouquet:
                     d_sel =               (max_sel-min_sel) / (len(self.sel_range_p_inc)-1)
                 elif progression=='GP':
                     r_sel = np.exp( np.log(max_sel/min_sel) / (len(self.sel_range_p_inc)-1) )
-                org_seed = np.array(org_seed)
+                org_seed = np.array(org_seed, copy=True)
                 prev_cost_val, plan_xml = self.get_cost_and_plan(org_seed, plan_id=None, scale=scale)
                 prev_plan_id = self.store_plan( plan_xml )
                 if total_dim >= 1 :
@@ -907,6 +907,7 @@ class ScaleVariablePlanBouquet:
                     cur_sel, exploration_thread_ls = np.copy(org_seed), [] # index to selectivity, as build_sel is not needed
                     for dim_l in range(total_dim-1):
                         # (dim_l, dim_h) is dimension pair to be explored
+                        print('Dimension Tuple to Explore',(dim_l, dim_h)) # PROFILE
                         p2s_m, seed_sel_ls= {}, [] # plan_index to selectivity, as build_sel is not needed
                         # 2D exploration using initial seed
                         seed_sel_ls.append( tuple(cur_sel) ) # index to selectivity, as build_sel is not needed
@@ -1019,7 +1020,7 @@ class ScaleVariablePlanBouquet:
                             next_cost_val, plan_xml = self.get_cost_and_plan(next_sel, plan_id=None, scale=scale)
                             next_plan_id = self.store_plan( plan_xml )
                             if (contour_cost/(1+nexus_tolerance) <= next_cost_val) and (next_cost_val <= contour_cost*(1+nexus_tolerance)):
-                                grad_impact = (1-ada_momentum**step_size)
+                                grad_impact = (1-(1-ada_momentum)**step_size)
                                 dir_vec = grad_impact*norm_grad_vec + (1-grad_impact)*norm_dir_vec
                                 # BisectionAPD code here with Simulating Recursion
                                 sim_stck = [ ((cur_sel, prev_plan_id, prev_cost_val),(next_sel, next_plan_id, next_cost_val)), ]
@@ -1049,7 +1050,8 @@ class ScaleVariablePlanBouquet:
                                         else:
                                             p2s_m[plan_id_m] = {tuple(sel_m)}
                                         seed_sel_ls.append( tuple(sel_m) )
-                                step_size *= 2 # Increasing Step size by 2
+                                if not end_point: # Grow step size only when grad_vec has not lead to boundary
+                                    step_size *= 2 # Increasing Step size by 2
                                 cur_sel, prev_plan_id, prev_cost_val = next_sel, next_plan_id, next_cost_val
                                 # Filling entries into contour cost deviation (Contour wise, unlike Query wise which Sriram did)
                                 self.obj_lock.acquire() ; self.deviation_dict[IC_id].append(next_cost_val/self.id2c_m[(IC_id,scale)]) ; self.obj_lock.release()

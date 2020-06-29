@@ -18,10 +18,9 @@ plt.xscale('log',basex=2)
 plt.xlabel('Step Size')
 plt.ylabel('Exponential Weight')
 
-plt.title('Weight Calculation for Tuning Direction Vector in ESS Space')
-
+title = 'Weight Calculation for Tuning Direction Vector in ESS Space'
+plt.title(title)
 plt.grid(True, which='both')
-
-
 plt.legend()
+plt.savefig( '{}.PNG'.format(title) , format='PNG' , dpi=400 , bbox_inches='tight' )
 plt.show()
