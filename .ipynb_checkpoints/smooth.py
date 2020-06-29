@@ -126,12 +126,14 @@ def plot_bars(benchmark_fldr, scale=100,IC_id=-1,plot_what=['EOC']):
         plt.grid(True, which='both')
         plt.title(title)
         plt.legend()
-        plt.savefig( '{}.PNG'.format(plot_typ) , format='PNG' , dpi=400 , bbox_inches='tight' )
+        plt.savefig( '{}GB-{}.PNG'.format(scale,plot_typ) , format='PNG' , dpi=400 , bbox_inches='tight' )
         # plt.show()
+        plt.clf() ; plt.close()
 
 
 
-
+for scale in (1,5,10,20,50,100,125,150,200,250):
+    plot_bars('../bouquet_master/tpcds',plot_what=['EOC','WOC','TOC','CPC','FPC'],scale=scale)
 
 
 
