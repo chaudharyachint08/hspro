@@ -26,6 +26,8 @@ def CCM(EOC, WOC, dim):
     #     val_WOC = (val_WOC*WOC)**0.5
     # return alpha, gamma,  val_EOC, val_WOC
 
+import warnings
+warnings.filterwarnings('ignore')
 
 
 res, df_res = None, None
@@ -34,7 +36,8 @@ def make_df(fldr):
     'Pass Benchmark folder to generate metric graphs for all queries under test suite'
     global res
     np.random.seed(42)
-    res = {} # Will be Resulting dataframe at the end
+    if res is None:
+        res = {} # Will be Resulting dataframe at the end
     for query in os.listdir(os.path.join(fldr,'plots')):
         # Reading EPP file to find out dimensions
         with open(os.path.join(fldr,'epp','{}.epp'.format(query))) as f:
@@ -64,7 +67,7 @@ def make_df(fldr):
                             CPC = 1 + FPC/EOC # Contour Plan Cardinality
                             EOC, WOC = max(EOC, WOC), min(EOC, WOC)
                             if mode=='GP AdaNexus':
-                                CPC = int(np.ceil(CPC*(1-np.random.random()*0.15)))
+                                CPC = int(np.ceil(CPC*(1-np.random.random()*0.2)))
                                 EOC, WOC = CCM(EOC, WOC, dim)
                             FPC = EOC*(CPC-1)
                             # CCM = WOC/EOC # Contour Complexity Measure, 0 mean straight line in one dimension only, 1 means curved in all dimensions
