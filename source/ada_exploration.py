@@ -4,12 +4,21 @@ def boundary_constraint(cur_sel, next_sel, dim_tuple):
     dim_l, dim_h = dim_tuple
     cur_sel, next_sel = np.copy(cur_sel), np.copy(next_sel)
     # Using Point slope form, (y-y1) = slope*(x-x1)
-    slope = (next_sel[dim_h]-cur_sel[dim_h]) / (next_sel[dim_l]-cur_sel[dim_l])
     # Finding X or Y value accordingly at all boundary which specifies constraints
-    y_val_at_max_x = (cur_sel[dim_h]+(max_sel-cur_sel[dim_l])*slope)
-    y_val_at_min_x = (cur_sel[dim_h]+(min_sel-cur_sel[dim_l])*slope)
-    x_val_at_max_y = (cur_sel[dim_l]+(max_sel-cur_sel[dim_h])/slope)
-    x_val_at_min_y = (cur_sel[dim_l]+(min_sel-cur_sel[dim_h])/slope)
+    if   abs(next_sel[dim_h]-cur_sel[dim_h])<epsilon:
+        slope = 0
+        y_val_at_max_x = (cur_sel[dim_h]+(max_sel-cur_sel[dim_l])*slope)
+        y_val_at_min_x = (cur_sel[dim_h]+(min_sel-cur_sel[dim_l])*slope)
+    elif abs(next_sel[dim_l]-cur_sel[dim_l])<epsilon:
+        slope = np.inf
+        x_val_at_max_y = (cur_sel[dim_l]+(max_sel-cur_sel[dim_h])/slope)
+        x_val_at_min_y = (cur_sel[dim_l]+(min_sel-cur_sel[dim_h])/slope)
+    else :
+        slope = (next_sel[dim_h]-cur_sel[dim_h]) / (next_sel[dim_l]-cur_sel[dim_l])
+        y_val_at_max_x = (cur_sel[dim_h]+(max_sel-cur_sel[dim_l])*slope)
+        y_val_at_min_x = (cur_sel[dim_h]+(min_sel-cur_sel[dim_l])*slope)
+        x_val_at_max_y = (cur_sel[dim_l]+(max_sel-cur_sel[dim_h])/slope)
+        x_val_at_min_y = (cur_sel[dim_l]+(min_sel-cur_sel[dim_h])/slope)
     # Finding if it goes beyond ESS, by which side of ESS, and marking intesection points at boundary
     if   min_sel<=y_val_at_max_x and y_val_at_max_x<=max_sel: # x = max_sel, limit constaint on y (right  boundary)
         x,y = max_sel, y_val_at_max_x
