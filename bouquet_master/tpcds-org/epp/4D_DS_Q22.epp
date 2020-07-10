@@ -1,0 +1,5 @@
+i_item_sk = inv_item_sk | +1
+w_warehouse_sk = inv_warehouse_sk | +1
+d_date_sk = inv_date_sk | +1
+
+# d_year = 1998 | +1

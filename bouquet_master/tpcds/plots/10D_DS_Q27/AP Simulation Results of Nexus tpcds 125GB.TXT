@@ -1,1 +1,0 @@
-{'Essential_Optimizer_calls': {0: 888, 1: 1}, 'Wasted_Optimizer_calls': {0: 435, 1: 0}, 'FPC_calls': {0: 8880, 1: 0}, 'termination-cost': 91627360.56500001, 'done': True, 'MSO_k': {0: 22.000000000000004, 1: 13.000000000000002}, 'MSO_e': 22.000000000000004, 'MSO_g': 44.0}
