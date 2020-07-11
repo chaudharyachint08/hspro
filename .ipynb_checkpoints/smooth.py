@@ -136,7 +136,7 @@ def plot_bars(benchmark_fldr, scale=100,IC_id=-1,plot_what=['EOC']):
 
 
 for scale in (1,5,10,20,50,100,125,150,200,250):
-    plot_bars('../bouquet_master/tpcds',plot_what=['EOC','WOC','TOC','CPC','FPC'],scale=scale)
+    plot_bars('../bouquet_master/tpcds-org',plot_what=['EOC','WOC','TOC','CPC','FPC'],scale=scale)
 
 
 
